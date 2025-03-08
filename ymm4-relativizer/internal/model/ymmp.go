@@ -162,4 +162,3 @@ func (y *YMMP) ToJSON() ([]byte, error) {
 
 	return json.MarshalIndent(output, "", "  ")
 } 
-} 
