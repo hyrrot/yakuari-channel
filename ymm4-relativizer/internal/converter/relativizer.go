@@ -19,51 +19,51 @@ type RelativizerConfig struct {
 }
 
 func Relativize(config RelativizerConfig) error {
-	// 入力ファイルを読み込む
+	// Read input file
 	data, err := os.ReadFile(config.InputPath)
 	if err != nil {
-		return fmt.Errorf("入力ファイルの読み込みに失敗: %w", err)
+		return fmt.Errorf("failed to read input file: %w", err)
 	}
 
-	// YMMPファイルをパース
+	// Parse YMMP file
 	ymmp, err := model.ParseYMMP(data)
 	if err != nil {
-		return fmt.Errorf("YMMPファイルのパースに失敗: %w", err)
+		return fmt.Errorf("failed to parse YMMP file: %w", err)
 	}
 
-	// アセットディレクトリのパスを作成
+	// Create assets directory path
 	assetsDir := filepath.Join(config.OutputDir, config.AssetsDir)
 
-	// ファイルパスを処理する関数
+	// Process file paths
 	processPath := func(path string, isRoot bool) string {
 		if path == "" {
 			return path
 		}
 
-		// ルート要素のFilePathはnullに設定
+		// Set root FilePath to null
 		if isRoot {
 			return ""
 		}
 
-		// ファイルの存在確認
+		// Check if file exists
 		if !utils.FileExists(path) {
 			if config.SkipMissing {
 				return path
 			}
-			return path // エラー処理は呼び出し側で行う
-		}
-
-		// 新しいパスを生成
-		newPath := utils.ProcessPathByMode(path, config.DirectoryMode, config.DirectoryLevels)
-		dstPath := filepath.Join(assetsDir, newPath)
-
-		// ファイルをコピー
-		if err := utils.CopyFile(path, dstPath); err != nil {
-			fmt.Fprintf(os.Stderr, "警告: ファイルのコピーに失敗 %s: %v\n", path, err)
 			return path
 		}
 
-		// 相対パスを返す
+		// Generate new path
+		newPath := utils.ProcessPathByMode(path, config.DirectoryMode, config.DirectoryLevels)
+		dstPath := filepath.Join(assetsDir, newPath)
+
+		// Copy file
+		if err := utils.CopyFile(path, dstPath); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to copy file %s: %v\n", path, err)
+			return path
+		}
+
+		// Convert to relative path
 		rel, err := filepath.Rel(config.OutputDir, dstPath)
 		if err != nil {
 			return path
@@ -71,22 +71,22 @@ func Relativize(config RelativizerConfig) error {
 		return filepath.ToSlash(rel)
 	}
 
-	// FilePathを更新
+	// Update FilePaths
 	ymmp.UpdateFilePaths(processPath)
 
-	// 結果を保存
+	// Save result
 	output, err := ymmp.ToJSON()
 	if err != nil {
-		return fmt.Errorf("JSONの生成に失敗: %w", err)
+		return fmt.Errorf("failed to generate JSON: %w", err)
 	}
 
-	// 出力ファイルを保存
+	// Save output file
 	outPath := filepath.Join(config.OutputDir, filepath.Base(config.InputPath[:len(config.InputPath)-len(filepath.Ext(config.InputPath))]+".ymmpr"))
 	if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil {
-		return fmt.Errorf("出力ディレクトリの作成に失敗: %w", err)
+		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 	if err := os.WriteFile(outPath, output, 0644); err != nil {
-		return fmt.Errorf("出力ファイルの保存に失敗: %w", err)
+		return fmt.Errorf("failed to save output file: %w", err)
 	}
 
 	return nil

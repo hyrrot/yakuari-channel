@@ -23,7 +23,7 @@ func main() {
 	config := parseFlags()
 	
 	if err := run(config); err != nil {
-		fmt.Fprintf(os.Stderr, "エラー: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -31,36 +31,36 @@ func main() {
 func parseFlags() *Config {
 	config := &Config{}
 	
-	flag.StringVar(&config.Mode, "mode", "relativize", "変換モード (relativize/absolutize)")
-	flag.StringVar(&config.InputPath, "input", "", "入力ファイルまたはディレクトリのパス")
-	flag.StringVar(&config.OutputDir, "output", "", "出力ディレクトリ")
-	flag.StringVar(&config.AssetsDir, "assets", "assets", "アセットディレクトリ名")
-	flag.StringVar(&config.DirectoryMode, "dirmode", "full", "ディレクトリモード (full/partial/flat)")
-	flag.IntVar(&config.DirectoryLevels, "levels", 2, "保持するディレクトリレベル数")
-	flag.BoolVar(&config.SkipMissing, "skip-missing", false, "存在しないファイルをスキップ")
+	flag.StringVar(&config.Mode, "mode", "relativize", "Conversion mode (relativize/absolutize)")
+	flag.StringVar(&config.InputPath, "input", "", "Input file or directory path")
+	flag.StringVar(&config.OutputDir, "output", "", "Output directory")
+	flag.StringVar(&config.AssetsDir, "assets", "assets", "Assets directory name")
+	flag.StringVar(&config.DirectoryMode, "dirmode", "full", "Directory mode (full/partial/flat)")
+	flag.IntVar(&config.DirectoryLevels, "levels", 2, "Number of directory levels to keep")
+	flag.BoolVar(&config.SkipMissing, "skip-missing", false, "Skip missing files")
 	
 	flag.Parse()
 	
 	if config.InputPath == "" {
-		fmt.Fprintln(os.Stderr, "エラー: 入力パスを指定してください")
+		fmt.Fprintln(os.Stderr, "Error: Input path is required")
 		flag.Usage()
 		os.Exit(1)
 	}
 
 	if config.OutputDir == "" {
-		fmt.Fprintln(os.Stderr, "エラー: 出力ディレクトリを指定してください")
+		fmt.Fprintln(os.Stderr, "Error: Output directory is required")
 		flag.Usage()
 		os.Exit(1)
 	}
 
 	if config.DirectoryMode != "full" && config.DirectoryMode != "partial" && config.DirectoryMode != "flat" {
-		fmt.Fprintln(os.Stderr, "エラー: 不正なディレクトリモードです。full, partial, または flat を指定してください")
+		fmt.Fprintln(os.Stderr, "Error: Invalid directory mode. Must be one of: full, partial, or flat")
 		flag.Usage()
 		os.Exit(1)
 	}
 
 	if config.DirectoryMode == "partial" && config.DirectoryLevels < 1 {
-		fmt.Fprintln(os.Stderr, "エラー: ディレクトリレベルは1以上を指定してください")
+		fmt.Fprintln(os.Stderr, "Error: Directory levels must be greater than 0")
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -69,9 +69,9 @@ func parseFlags() *Config {
 }
 
 func run(config *Config) error {
-	// 出力ディレクトリを作成
+	// Create output directory
 	if err := os.MkdirAll(config.OutputDir, 0755); err != nil {
-		return fmt.Errorf("出力ディレクトリの作成に失敗しました %s: %w", config.OutputDir, err)
+		return fmt.Errorf("failed to create output directory %s: %w", config.OutputDir, err)
 	}
 
 	switch config.Mode {
@@ -84,7 +84,7 @@ func run(config *Config) error {
 			SkipMissing:     config.SkipMissing,
 			DirectoryLevels: config.DirectoryLevels,
 		}); err != nil {
-			return fmt.Errorf("相対化処理に失敗しました: %w", err)
+			return fmt.Errorf("relativization failed: %w", err)
 		}
 
 	case "absolutize":
@@ -93,11 +93,11 @@ func run(config *Config) error {
 			OutputDir:   config.OutputDir,
 			SkipMissing: config.SkipMissing,
 		}); err != nil {
-			return fmt.Errorf("絶対化処理に失敗しました: %w", err)
+			return fmt.Errorf("absolutization failed: %w", err)
 		}
 
 	default:
-		return fmt.Errorf("不正なモード: %s", config.Mode)
+		return fmt.Errorf("invalid mode: %s", config.Mode)
 	}
 
 	return nil

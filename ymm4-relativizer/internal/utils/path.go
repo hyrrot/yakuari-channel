@@ -45,20 +45,21 @@ func ProcessPathByMode(path string, mode string, levels int) string {
 
 	switch mode {
 	case "full":
-		// フルパスを維持（ドライブレター除去済み）
 		return path
 		
 	case "partial":
-		// 指定レベルのディレクトリのみ保持
 		parts := strings.Split(filepath.ToSlash(path), "/")
-		if len(parts) <= levels {
+		if len(parts) <= levels+1 {
 			return path
 		}
-		return filepath.Join(parts[len(parts)-levels:]...)
+		return filepath.FromSlash(strings.Join(parts[len(parts)-levels-1:], "/"))
 		
 	case "flat":
-		// ファイル名のみ（ハッシュ付き）
-		return GenerateHashedFilename(path)
+		// パスを正規化してからハッシュを生成
+		normalizedPath := filepath.ToSlash(path)
+		hash := sha256.Sum256([]byte(normalizedPath))
+		hashStr := fmt.Sprintf("%x", hash)[:8]
+		return fmt.Sprintf("%s-%s", hashStr, filepath.Base(path))
 		
 	default:
 		return path

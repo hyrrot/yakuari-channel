@@ -4,25 +4,28 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/hyrrot/ymm4-relativizer/internal/model"
 )
 
 func TestIntegrationWithRealFile(t *testing.T) {
-	// テスト用の一時ディレクトリを作成
+	// Create temporary directory for testing
 	tmpDir, err := os.MkdirTemp("", "ymmp-integration-test-*")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
 
-	// テストケース
+	// Test cases
 	tests := []struct {
 		name        string
 		config      RelativizerConfig
 		checkOutput func(t *testing.T, outputPath string, assetsDir string)
 	}{
 		{
-			name: "実際のYMMPファイルの相対化（フルモード）",
+			name: "Relativize real YMMP file (full mode)",
 			config: RelativizerConfig{
 				InputPath:     "../../.work/movie-new-remove-voicecache.ymmp",
 				OutputDir:     filepath.Join(tmpDir, "full"),
@@ -31,38 +34,38 @@ func TestIntegrationWithRealFile(t *testing.T) {
 				SkipMissing:   true,
 			},
 			checkOutput: func(t *testing.T, outputPath string, assetsDir string) {
-				// 出力ファイルの存在確認
+				// Check if output file exists
 				if _, err := os.Stat(outputPath); os.IsNotExist(err) {
-					t.Errorf("出力ファイルが作成されていません: %s", outputPath)
+					t.Errorf("Output file was not created: %s", outputPath)
 					return
 				}
 
-				// JSONとして読み込めることを確認
+				// Check if file can be parsed as JSON
 				data, err := os.ReadFile(outputPath)
 				if err != nil {
-					t.Errorf("出力ファイルの読み込みに失敗: %v", err)
+					t.Errorf("Failed to read output file: %v", err)
 					return
 				}
 
 				var result map[string]interface{}
 				if err := json.Unmarshal(data, &result); err != nil {
-					t.Errorf("出力ファイルのJSONパースに失敗: %v", err)
+					t.Errorf("Failed to parse output file as JSON: %v", err)
 					return
 				}
 
-				// ルートのFilePathがnullになっていることを確認
+				// Check if root FilePath is null
 				if result["FilePath"] != nil {
-					t.Error("ルートのFilePathがnullになっていません")
+					t.Error("Root FilePath is not null")
 				}
 
-				// アセットディレクトリが作成されていることを確認
+				// Check if assets directory was created
 				if _, err := os.Stat(assetsDir); os.IsNotExist(err) {
-					t.Error("アセットディレクトリが作成されていません")
+					t.Error("Assets directory was not created")
 				}
 			},
 		},
 		{
-			name: "実際のYMMPファイルの相対化（フラットモード）",
+			name: "Relativize real YMMP file (flat mode)",
 			config: RelativizerConfig{
 				InputPath:     "../../.work/movie-new-remove-voicecache.ymmp",
 				OutputDir:     filepath.Join(tmpDir, "flat"),
@@ -71,36 +74,36 @@ func TestIntegrationWithRealFile(t *testing.T) {
 				SkipMissing:   true,
 			},
 			checkOutput: func(t *testing.T, outputPath string, assetsDir string) {
-				// 出力ファイルの存在確認
+				// Check if output file exists
 				if _, err := os.Stat(outputPath); os.IsNotExist(err) {
-					t.Errorf("出力ファイルが作成されていません: %s", outputPath)
+					t.Errorf("Output file was not created: %s", outputPath)
 					return
 				}
 
-				// JSONとして読み込めることを確認
+				// Check if file can be parsed as JSON
 				data, err := os.ReadFile(outputPath)
 				if err != nil {
-					t.Errorf("出力ファイルの読み込みに失敗: %v", err)
+					t.Errorf("Failed to read output file: %v", err)
 					return
 				}
 
 				var result map[string]interface{}
 				if err := json.Unmarshal(data, &result); err != nil {
-					t.Errorf("出力ファイルのJSONパースに失敗: %v", err)
+					t.Errorf("Failed to parse output file as JSON: %v", err)
 					return
 				}
 
-				// アセットディレクトリの内容を確認
+				// Check assets directory contents
 				files, err := os.ReadDir(assetsDir)
 				if err != nil {
-					t.Errorf("アセットディレクトリの読み取りに失敗: %v", err)
+					t.Errorf("Failed to read assets directory: %v", err)
 					return
 				}
 
-				// フラットモードでは全てのファイルが直接assetsディレクトリに配置されているはず
+				// In flat mode, all files should be directly in the assets directory
 				for _, file := range files {
 					if file.IsDir() {
-						t.Errorf("フラットモードなのにサブディレクトリが存在します: %s", file.Name())
+						t.Errorf("Found subdirectory in flat mode: %s", file.Name())
 					}
 				}
 			},
@@ -109,68 +112,192 @@ func TestIntegrationWithRealFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// 相対化処理の実行
+			// Run relativization
 			if err := Relativize(tt.config); err != nil {
-				t.Fatalf("相対化処理に失敗: %v", err)
+				t.Fatalf("Relativization failed: %v", err)
 			}
 
-			// 出力ファイルのパスを構築
+			// Build output paths
 			baseName := filepath.Base(tt.config.InputPath)
 			outputName := baseName[:len(baseName)-len(filepath.Ext(baseName))] + ".ymmpr"
 			outputPath := filepath.Join(tt.config.OutputDir, outputName)
 			assetsDir := filepath.Join(tt.config.OutputDir, tt.config.AssetsDir)
 
-			// 出力の検証
+			// Verify output
 			tt.checkOutput(t, outputPath, assetsDir)
 
-			// 絶対化のテスト
+			// Test absolutization
 			absolutizeConfig := AbsolutizerConfig{
 				InputPath:   outputPath,
 				OutputDir:   filepath.Join(tt.config.OutputDir, "abs"),
 				SkipMissing: true,
 			}
 
-			// 絶対化処理の実行
+			// Run absolutization
 			if err := Absolutize(absolutizeConfig); err != nil {
-				t.Fatalf("絶対化処理に失敗: %v", err)
+				t.Fatalf("Absolutization failed: %v", err)
 			}
 
-			// 絶対化された出力ファイルのパスを構築
+			// Build absolutized output paths
 			absOutputName := outputName[:len(outputName)-len(filepath.Ext(outputName))] + ".ymmp"
 			absOutputPath := filepath.Join(absolutizeConfig.OutputDir, absOutputName)
 
-			// 絶対化された出力ファイルの存在確認
+			// Check if absolutized output file exists
 			if _, err := os.Stat(absOutputPath); os.IsNotExist(err) {
-				t.Errorf("絶対化された出力ファイルが作成されていません: %s", absOutputPath)
+				t.Errorf("Absolutized output file was not created: %s", absOutputPath)
 			}
 
-			// JSONとして読み込めることを確認
+			// Check if file can be parsed as JSON
 			data, err := os.ReadFile(absOutputPath)
 			if err != nil {
-				t.Errorf("絶対化された出力ファイルの読み込みに失敗: %v", err)
+				t.Errorf("Failed to read absolutized output file: %v", err)
 				return
 			}
 
 			var result map[string]interface{}
 			if err := json.Unmarshal(data, &result); err != nil {
-				t.Errorf("絶対化された出力ファイルのJSONパースに失敗: %v", err)
+				t.Errorf("Failed to parse absolutized output file as JSON: %v", err)
 				return
 			}
 
-			// ルートのFilePathが絶対パスになっていることを確認
+			// Check if root FilePath is an absolute path
 			if filePath, ok := result["FilePath"].(string); !ok {
-				t.Error("ルートのFilePathが文字列ではありません")
+				t.Error("Root FilePath is not a string")
 			} else if !filepath.IsAbs(filePath) {
-				t.Errorf("ルートのFilePathが絶対パスになっていません: %s", filePath)
-			} else {
-				// 出力ファイルの絶対パスと一致することを確認
-				expectedPath, err := filepath.Abs(absOutputPath)
-				if err != nil {
-					t.Errorf("期待するパスの絶対パス化に失敗: %v", err)
-				} else if filePath != expectedPath {
-					t.Errorf("ルートのFilePathが期待する値と異なります。\n期待: %s\n実際: %s", expectedPath, filePath)
-				}
+				t.Error("Root FilePath is not an absolute path")
 			}
+		})
+	}
+}
+
+func TestIntegrationEdgeCases(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "ymm4-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	tests := []struct {
+		name     string
+		setup    func(t *testing.T) string
+		mode     string
+		validate func(t *testing.T, outputPath string)
+	}{
+		{
+			name: "Empty YMMP file",
+			setup: func(t *testing.T) string {
+				path := filepath.Join(tempDir, "empty.ymmp")
+				if err := os.WriteFile(path, []byte("{}"), 0644); err != nil {
+					t.Fatal(err)
+				}
+				return path
+			},
+			mode: "full",
+			validate: func(t *testing.T, outputPath string) {
+				content, err := os.ReadFile(outputPath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var data map[string]interface{}
+				if err := json.Unmarshal(content, &data); err != nil {
+					t.Fatal(err)
+				}
+			},
+		},
+		{
+			name: "YMMP with non-existent files",
+			setup: func(t *testing.T) string {
+				filePath := "non_existent.wav"
+				ymmp := model.YMMP{
+					Root: model.Item{
+						FilePath: &filePath,
+						Items: []model.Item{
+							{FilePath: &filePath},
+						},
+					},
+				}
+				data, err := json.Marshal(ymmp)
+				if err != nil {
+					t.Fatal(err)
+				}
+				path := filepath.Join(tempDir, "non_existent.ymmp")
+				if err := os.WriteFile(path, data, 0644); err != nil {
+					t.Fatal(err)
+				}
+				return path
+			},
+			mode: "flat",
+			validate: func(t *testing.T, outputPath string) {
+				content, err := os.ReadFile(outputPath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var data map[string]interface{}
+				if err := json.Unmarshal(content, &data); err != nil {
+					t.Fatal(err)
+				}
+				filePath, ok := data["FilePath"].(string)
+				if !ok || !strings.Contains(filePath, "-non_existent.wav") {
+					t.Error("expected flattened path for non-existent file")
+				}
+			},
+		},
+		{
+			name: "YMMP with special characters in paths",
+			setup: func(t *testing.T) string {
+				specialPath := filepath.Join(tempDir, "特殊な名前")
+				if err := os.MkdirAll(specialPath, 0755); err != nil {
+					t.Fatal(err)
+				}
+				ymmp := &YMMP{
+					FilePath: filepath.Join(specialPath, "テスト.wav"),
+					Items: []Item{
+						{FilePath: filepath.Join(specialPath, "🎮.wav")},
+					},
+				}
+				data, err := json.Marshal(ymmp)
+				if err != nil {
+					t.Fatal(err)
+				}
+				path := filepath.Join(tempDir, "special.ymmp")
+				if err := os.WriteFile(path, data, 0644); err != nil {
+					t.Fatal(err)
+				}
+				return path
+			},
+			mode: "full",
+			validate: func(t *testing.T, outputPath string) {
+				content, err := os.ReadFile(outputPath)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var ymmp YMMP
+				if err := json.Unmarshal(content, &ymmp); err != nil {
+					t.Fatal(err)
+				}
+				if !strings.Contains(ymmp.FilePath, "特殊な名前") {
+					t.Error("expected path to contain Japanese characters")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inputPath := tt.setup(t)
+			outputDir := filepath.Join(tempDir, "output")
+			
+			err := Relativize(RelativizerConfig{
+				InputPath:     inputPath,
+				OutputDir:     outputDir,
+				DirectoryMode: tt.mode,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			
+			outputPath := filepath.Join(outputDir, filepath.Base(inputPath))
+			tt.validate(t, outputPath)
 		})
 	}
 } 

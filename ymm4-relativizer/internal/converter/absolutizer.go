@@ -16,39 +16,39 @@ type AbsolutizerConfig struct {
 }
 
 func Absolutize(config AbsolutizerConfig) error {
-	// 出力ディレクトリを作成
+	// Create output directory
 	if err := os.MkdirAll(config.OutputDir, 0755); err != nil {
-		return fmt.Errorf("出力ディレクトリの作成に失敗: %w", err)
+		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
-	// 入力ファイルを読み込む
+	// Read input file
 	data, err := os.ReadFile(config.InputPath)
 	if err != nil {
-		return fmt.Errorf("入力ファイルの読み込みに失敗: %w", err)
+		return fmt.Errorf("failed to read input file: %w", err)
 	}
 
-	// YMMPファイルをパース
+	// Parse YMMP file
 	ymmp, err := model.ParseYMMP(data)
 	if err != nil {
-		return fmt.Errorf("YMMPファイルのパースに失敗: %w", err)
+		return fmt.Errorf("failed to parse YMMP file: %w", err)
 	}
 
-	// 入力ファイルのディレクトリパス
+	// Get input file directory path
 	inputDir := filepath.Dir(config.InputPath)
 
-	// 出力ファイル名を構築
+	// Build output file path
 	outName := filepath.Base(config.InputPath)
 	outName = outName[:len(outName)-len(filepath.Ext(outName))] + ".ymmp"
 	outPath := filepath.Join(config.OutputDir, outName)
 	absOutPath, err := filepath.Abs(outPath)
 	if err != nil {
-		return fmt.Errorf("出力パスの絶対パス化に失敗: %w", err)
+		return fmt.Errorf("failed to get absolute output path: %w", err)
 	}
 
-	// ファイルパスを処理する関数
+	// Process file paths
 	processPath := func(path string, isRoot bool) string {
 		if isRoot {
-			// ルート要素のFilePathは出力ファイルの絶対パスを設定
+			// Set root FilePath to output file's absolute path
 			return absOutPath
 		}
 
@@ -56,37 +56,37 @@ func Absolutize(config AbsolutizerConfig) error {
 			return path
 		}
 
-		// 相対パスを絶対パスに変換
+		// Convert relative path to absolute path
 		absPath := filepath.Join(inputDir, path)
 		absPath, err := filepath.Abs(absPath)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "警告: パスの絶対パス化に失敗 %s: %v\n", path, err)
+			fmt.Fprintf(os.Stderr, "Warning: Failed to get absolute path for %s: %v\n", path, err)
 			return path
 		}
 		
-		// ファイルの存在確認
+		// Check if file exists
 		if !utils.FileExists(absPath) {
 			if config.SkipMissing {
 				return path
 			}
-			fmt.Fprintf(os.Stderr, "警告: ファイルが存在しません %s\n", absPath)
+			fmt.Fprintf(os.Stderr, "Warning: File does not exist %s\n", absPath)
 			return path
 		}
 
 		return absPath
 	}
 
-	// FilePathを更新
+	// Update FilePaths
 	ymmp.UpdateFilePaths(processPath)
 
-	// 結果を保存
+	// Save result
 	output, err := ymmp.ToJSON()
 	if err != nil {
-		return fmt.Errorf("JSONの生成に失敗: %w", err)
+		return fmt.Errorf("failed to generate JSON: %w", err)
 	}
 
 	if err := os.WriteFile(outPath, output, 0644); err != nil {
-		return fmt.Errorf("出力ファイルの保存に失敗: %w", err)
+		return fmt.Errorf("failed to save output file: %w", err)
 	}
 
 	return nil
