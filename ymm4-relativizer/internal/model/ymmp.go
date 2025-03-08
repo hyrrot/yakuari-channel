@@ -6,7 +6,7 @@ import (
 
 // YMMP はYMMPファイルの基本構造を表します
 type YMMP struct {
-	RootFilePath interface{}            `json:"FilePath"`
+	RootFilePath interface{}            `json:"FilePath"` // stringまたはnull
 	Content      map[string]interface{} `json:"-"`
 }
 
@@ -29,7 +29,7 @@ func ParseYMMP(data []byte) (*YMMP, error) {
 	}
 
 	// ルートのFilePathを取得
-	if filePath, ok := rawData["FilePath"]; ok {
+	if filePath, exists := rawData["FilePath"]; exists {
 		ymmp.RootFilePath = filePath
 		delete(rawData, "FilePath")
 	}
@@ -91,9 +91,17 @@ func (y *YMMP) UpdateFilePaths(updateFunc func(string, bool) string) {
 	if str, ok := y.RootFilePath.(string); ok {
 		newPath := updateFunc(str, true)
 		if newPath == "" {
-			y.RootFilePath = nil // nullに設定
+			y.RootFilePath = nil
 		} else {
 			y.RootFilePath = newPath
+		}
+	} else {
+		// FilePathがnullまたは文字列以外の場合、新しいパスを生成
+		newPath := updateFunc("", true)
+		if newPath != "" {
+			y.RootFilePath = newPath
+		} else {
+			y.RootFilePath = nil
 		}
 	}
 
@@ -108,15 +116,21 @@ func updatePathsRecursive(data interface{}, updateFunc func(string, bool) string
 		result := make(map[string]interface{})
 		for key, value := range v {
 			if key == "FilePath" {
-				if str, ok := value.(string); ok && str != "" {
+				if str, ok := value.(string); ok {
 					newPath := updateFunc(str, false)
 					if newPath == "" {
-						result[key] = nil // nullに設定
+						result[key] = nil
 					} else {
 						result[key] = newPath
 					}
 				} else {
-					result[key] = value
+					// FilePathがnullまたは文字列以外の場合
+					newPath := updateFunc("", false)
+					if newPath != "" {
+						result[key] = newPath
+					} else {
+						result[key] = nil
+					}
 				}
 			} else {
 				result[key] = updatePathsRecursive(value, updateFunc)
@@ -147,4 +161,5 @@ func (y *YMMP) ToJSON() ([]byte, error) {
 	output["FilePath"] = y.RootFilePath
 
 	return json.MarshalIndent(output, "", "  ")
+} 
 } 
