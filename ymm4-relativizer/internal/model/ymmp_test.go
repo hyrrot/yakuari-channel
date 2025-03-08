@@ -1,4 +1,4 @@
-package model
+package model_test
 
 import (
 	"encoding/json"
@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	
+	"github.com/hyrrot/ymm4-relativizer/internal/model"
 )
 
 // まず構造体を定義
@@ -72,7 +74,7 @@ func TestParseYMMP(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := ParseYMMP([]byte(tt.input))
+			result, err := model.ParseYMMP([]byte(tt.input))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseYMMP() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -235,64 +237,74 @@ func generateDeepNestedJSON(depth int) string {
 	return sb.String()
 }
 
-func TestParseYMMPEdgeCases(t *testing.T) {
+func TestParseYMMPBasic(t *testing.T) {
 	tests := []struct {
 		name        string
 		input       string
 		expectError bool
-		validate    func(*testing.T, *YMMP)
+		validate    func(*testing.T, *model.YMMP)
 	}{
 		{
-			name: "Empty JSON object",
+			name: "空のJSONオブジェクト",
 			input: `{}`,
 			expectError: false,
-			validate: func(t *testing.T, ymmp *YMMP) {
-				if ymmp == nil {
-					t.Error("expected non-nil YMMP object")
+			validate: func(t *testing.T, ymmp *model.YMMP) {
+				output, err := ymmp.ToJSON()
+				if err != nil {
+					t.Errorf("ToJSONが失敗しました: %v", err)
+					return
+				}
+				
+				var data map[string]interface{}
+				if err := json.Unmarshal(output, &data); err != nil {
+					t.Errorf("出力のJSONパースに失敗しました: %v", err)
+					return
+				}
+				
+				filePath, exists := data["FilePath"]
+				if !exists {
+					t.Error("FilePathフィールドが存在しません")
+				}
+				if filePath != nil {
+					t.Error("FilePathフィールドはnullであるべきです")
 				}
 			},
 		},
 		{
-			name: "FilePath with null values in nested objects",
+			name: "基本的なYMMPオブジェクト",
 			input: `{
 				"FilePath": "test.wav",
 				"Items": [
 					{
-						"FilePath": null
+						"FilePath": "audio1.wav"
 					},
 					{
-						"FilePath": "audio.wav",
-						"Items": [
-							{
-								"FilePath": null
-							}
-						]
+						"FilePath": "audio2.wav"
 					}
 				]
 			}`,
 			expectError: false,
-			validate: func(t *testing.T, ymmp *YMMP) {
-				if str, ok := ymmp.RootFilePath.(string); !ok || str != "test.wav" {
-					t.Error("expected root FilePath to be 'test.wav'")
-				}
-			},
-		},
-		{
-			name: "Malformed JSON with unexpected end",
-			input: `{
-				"FilePath": "test.wav",
-				"Items": [
-					{`,
-			expectError: true,
-		},
-		{
-			name: "JSON with very large nested structure",
-			input: generateDeepNestedJSON(100),
-			expectError: false,
-			validate: func(t *testing.T, ymmp *YMMP) {
+			validate: func(t *testing.T, ymmp *model.YMMP) {
 				paths := ymmp.FindAllFilePaths()
-				if len(paths) != 101 {
-					t.Errorf("expected 101 file paths, got %d", len(paths))
+				expectedPaths := map[string]bool{
+					"test.wav": false,
+					"audio1.wav": false,
+					"audio2.wav": false,
+				}
+				
+				for _, p := range paths {
+					if p.IsRoot && p.Path == "test.wav" {
+						expectedPaths["test.wav"] = true
+					}
+					if !p.IsRoot {
+						expectedPaths[p.Path] = true
+					}
+				}
+				
+				for path, found := range expectedPaths {
+					if !found {
+						t.Errorf("パス '%s' が見つかりません", path)
+					}
 				}
 			},
 		},
@@ -300,15 +312,103 @@ func TestParseYMMPEdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ymmp, err := ParseYMMP([]byte(tt.input))
+			ymmp, err := model.ParseYMMP([]byte(tt.input))
 			if tt.expectError {
 				if err == nil {
-					t.Error("expected error, got nil")
+					t.Error("エラーが期待されましたが、nilが返されました")
 				}
 				return
 			}
 			if err != nil {
-				t.Errorf("unexpected error: %v", err)
+				t.Errorf("予期せぬエラー: %v", err)
+				return
+			}
+			if tt.validate != nil {
+				tt.validate(t, ymmp)
+			}
+		})
+	}
+}
+
+func TestParseYMMPEdgeCases(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		expectError bool
+		validate    func(*testing.T, *model.YMMP)
+	}{
+		{
+			name: "不正なJSON形式",
+			input: `{
+				"FilePath": "test.wav",
+				"Items": [
+					{`,
+			expectError: true,
+		},
+		{
+			name: "大規模なネスト構造を持つJSON",
+			input: generateDeepNestedJSON(100),
+			expectError: false,
+			validate: func(t *testing.T, ymmp *model.YMMP) {
+				paths := ymmp.FindAllFilePaths()
+				if len(paths) != 101 {
+					t.Errorf("期待されるファイルパス数は101ですが、%d個見つかりました", len(paths))
+				}
+				
+				foundRoot := false
+				for _, p := range paths {
+					if p.IsRoot && p.Path == "root.wav" {
+						foundRoot = true
+						break
+					}
+				}
+				if !foundRoot {
+					t.Error("ルートのFilePath 'root.wav'が見つかりません")
+				}
+			},
+		},
+		{
+			name: "nullのFilePathを含むオブジェクト",
+			input: `{
+				"FilePath": null,
+				"Items": [
+					{
+						"FilePath": null
+					},
+					{
+						"FilePath": "audio.wav"
+					}
+				]
+			}`,
+			expectError: false,
+			validate: func(t *testing.T, ymmp *model.YMMP) {
+				paths := ymmp.FindAllFilePaths()
+				foundAudio := false
+				
+				for _, p := range paths {
+					if !p.IsRoot && p.Path == "audio.wav" {
+						foundAudio = true
+					}
+				}
+				
+				if !foundAudio {
+					t.Error("ネストされたFilePath 'audio.wav'が見つかりません")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ymmp, err := model.ParseYMMP([]byte(tt.input))
+			if tt.expectError {
+				if err == nil {
+					t.Error("エラーが期待されましたが、nilが返されました")
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("予期せぬエラー: %v", err)
 				return
 			}
 			if tt.validate != nil {

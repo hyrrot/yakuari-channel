@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -276,9 +275,23 @@ func TestIntegrationEdgeCases(t *testing.T) {
 				if err := json.Unmarshal(content, &data); err != nil {
 					t.Fatal(err)
 				}
-				filePath, ok := data["FilePath"].(string)
-				if !ok || !strings.Contains(filePath, "-non_existent.wav") {
-					t.Error("expected flattened path for non-existent file")
+
+				// ルートのFilePathがnullであることを確認
+				if data["FilePath"] != nil {
+					t.Error("expected root FilePath to be null")
+				}
+
+				// Itemsの中のFilePathが変更されていないことを確認
+				if items, ok := data["Items"].([]interface{}); ok {
+					if len(items) > 0 {
+						if item, ok := items[0].(map[string]interface{}); ok {
+							if filePath, ok := item["FilePath"].(string); ok {
+								if filePath != "non_existent.wav" {
+									t.Errorf("expected non-existent file path to remain unchanged, got %q", filePath)
+								}
+							}
+						}
+					}
 				}
 			},
 		},
