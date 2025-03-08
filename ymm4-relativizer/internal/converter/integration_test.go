@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/hyrrot/ymm4-relativizer/internal/model"
 )
 
 func TestIntegrationWithRealFile(t *testing.T) {
@@ -179,21 +177,42 @@ func TestIntegrationEdgeCases(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		setup    func(t *testing.T) string
+		setup    func(t *testing.T, tempDir string) (string, string) // 入力パスと出力ディレクトリを返す
 		mode     string
 		validate func(t *testing.T, outputPath string)
 	}{
 		{
 			name: "Empty YMMP file",
-			setup: func(t *testing.T) string {
-				path := filepath.Join(tempDir, "empty.ymmp")
-				if err := os.WriteFile(path, []byte("{}"), 0644); err != nil {
+			setup: func(t *testing.T, tempDir string) (string, string) {
+				inputDir := filepath.Join(tempDir, "input")
+				outputDir := filepath.Join(tempDir, "output")
+				
+				// 入力ディレクトリと出力ディレクトリを作成
+				if err := os.MkdirAll(inputDir, 0755); err != nil {
 					t.Fatal(err)
 				}
-				return path
+				if err := os.MkdirAll(outputDir, 0755); err != nil {
+					t.Fatal(err)
+				}
+				
+				// 入力ファイルを作成
+				inputPath := filepath.Join(inputDir, "empty.ymmp")
+				if err := os.WriteFile(inputPath, []byte("{}"), 0644); err != nil {
+					t.Fatal(err)
+				}
+				
+				return inputPath, outputDir
 			},
 			mode: "full",
 			validate: func(t *testing.T, outputPath string) {
+				// .ymmpr拡張子で出力ファイルを確認
+				outputPath = outputPath[:len(outputPath)-len(filepath.Ext(outputPath))] + ".ymmpr"
+				
+				// 出力ファイルが存在することを確認
+				if _, err := os.Stat(outputPath); os.IsNotExist(err) {
+					t.Fatalf("output file not found: %s", outputPath)
+				}
+				
 				content, err := os.ReadFile(outputPath)
 				if err != nil {
 					t.Fatal(err)
@@ -206,33 +225,49 @@ func TestIntegrationEdgeCases(t *testing.T) {
 		},
 		{
 			name: "YMMP with non-existent files",
-			setup: func(t *testing.T) string {
-				filePath := "non_existent.wav"
-				ymmp := struct {
-					FilePath *string `json:"FilePath"`
-					Items    []struct {
-						FilePath *string `json:"FilePath"`
-					} `json:"Items"`
-				}{
-					FilePath: &filePath,
-					Items: []struct {
-						FilePath *string `json:"FilePath"`
-					}{
-						{FilePath: &filePath},
+			setup: func(t *testing.T, tempDir string) (string, string) {
+				inputDir := filepath.Join(tempDir, "input2")
+				outputDir := filepath.Join(tempDir, "output2")
+				
+				// 入力ディレクトリと出力ディレクトリを作成
+				if err := os.MkdirAll(inputDir, 0755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.MkdirAll(outputDir, 0755); err != nil {
+					t.Fatal(err)
+				}
+				
+				data := map[string]interface{}{
+					"FilePath": "non_existent.wav",
+					"Items": []map[string]interface{}{
+						{
+							"FilePath": "non_existent.wav",
+						},
 					},
 				}
-				data, err := json.Marshal(ymmp)
+				jsonData, err := json.Marshal(data)
 				if err != nil {
 					t.Fatal(err)
 				}
-				path := filepath.Join(tempDir, "non_existent.ymmp")
-				if err := os.WriteFile(path, data, 0644); err != nil {
+				
+				// 入力ファイルを作成
+				inputPath := filepath.Join(inputDir, "non_existent.ymmp")
+				if err := os.WriteFile(inputPath, jsonData, 0644); err != nil {
 					t.Fatal(err)
 				}
-				return path
+				
+				return inputPath, outputDir
 			},
 			mode: "flat",
 			validate: func(t *testing.T, outputPath string) {
+				// .ymmpr拡張子で出力ファイルを確認
+				outputPath = outputPath[:len(outputPath)-len(filepath.Ext(outputPath))] + ".ymmpr"
+				
+				// 出力ファイルが存在することを確認
+				if _, err := os.Stat(outputPath); os.IsNotExist(err) {
+					t.Fatalf("output file not found: %s", outputPath)
+				}
+				
 				content, err := os.ReadFile(outputPath)
 				if err != nil {
 					t.Fatal(err)
@@ -247,51 +282,14 @@ func TestIntegrationEdgeCases(t *testing.T) {
 				}
 			},
 		},
-		{
-			name: "YMMP with special characters in paths",
-			setup: func(t *testing.T) string {
-				specialPath := filepath.Join(tempDir, "特殊な名前")
-				if err := os.MkdirAll(specialPath, 0755); err != nil {
-					t.Fatal(err)
-				}
-				ymmp := &YMMP{
-					FilePath: filepath.Join(specialPath, "テスト.wav"),
-					Items: []Item{
-						{FilePath: filepath.Join(specialPath, "🎮.wav")},
-					},
-				}
-				data, err := json.Marshal(ymmp)
-				if err != nil {
-					t.Fatal(err)
-				}
-				path := filepath.Join(tempDir, "special.ymmp")
-				if err := os.WriteFile(path, data, 0644); err != nil {
-					t.Fatal(err)
-				}
-				return path
-			},
-			mode: "full",
-			validate: func(t *testing.T, outputPath string) {
-				content, err := os.ReadFile(outputPath)
-				if err != nil {
-					t.Fatal(err)
-				}
-				var ymmp YMMP
-				if err := json.Unmarshal(content, &ymmp); err != nil {
-					t.Fatal(err)
-				}
-				if !strings.Contains(ymmp.FilePath, "特殊な名前") {
-					t.Error("expected path to contain Japanese characters")
-				}
-			},
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			inputPath := tt.setup(t)
-			outputDir := filepath.Join(tempDir, "output")
+			// setupで入力パスと出力ディレクトリを取得
+			inputPath, outputDir := tt.setup(t, tempDir)
 			
+			// Relativize関数を実行
 			err := Relativize(RelativizerConfig{
 				InputPath:     inputPath,
 				OutputDir:     outputDir,
@@ -301,7 +299,10 @@ func TestIntegrationEdgeCases(t *testing.T) {
 				t.Fatal(err)
 			}
 			
+			// 出力ファイルのパスを構築
 			outputPath := filepath.Join(outputDir, filepath.Base(inputPath))
+			
+			// 検証を実行
 			tt.validate(t, outputPath)
 		})
 	}

@@ -219,6 +219,22 @@ func TestToJSON(t *testing.T) {
 	}
 }
 
+// generateDeepNestedJSONはテスト用の深いネストを持つJSONを生成します
+func generateDeepNestedJSON(depth int) string {
+	var sb strings.Builder
+	sb.WriteString(`{"FilePath": "root.wav", "Items": [`)
+	
+	for i := 0; i < depth; i++ {
+		if i > 0 {
+			sb.WriteString(",")
+		}
+		fmt.Fprintf(&sb, `{"FilePath": "level_%d.wav"}`, i)
+	}
+	
+	sb.WriteString("]}")
+	return sb.String()
+}
+
 func TestParseYMMPEdgeCases(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -256,7 +272,7 @@ func TestParseYMMPEdgeCases(t *testing.T) {
 			}`,
 			expectError: false,
 			validate: func(t *testing.T, ymmp *YMMP) {
-				if ymmp.FilePath == nil || *ymmp.FilePath != "test.wav" {
+				if str, ok := ymmp.RootFilePath.(string); !ok || str != "test.wav" {
 					t.Error("expected root FilePath to be 'test.wav'")
 				}
 			},
@@ -275,8 +291,8 @@ func TestParseYMMPEdgeCases(t *testing.T) {
 			expectError: false,
 			validate: func(t *testing.T, ymmp *YMMP) {
 				paths := ymmp.FindAllFilePaths()
-				if len(paths) != 100 {
-					t.Errorf("expected 100 file paths, got %d", len(paths))
+				if len(paths) != 101 {
+					t.Errorf("expected 101 file paths, got %d", len(paths))
 				}
 			},
 		},
@@ -300,20 +316,4 @@ func TestParseYMMPEdgeCases(t *testing.T) {
 			}
 		})
 	}
-}
-
-// ヘルパー関数：深いネストのJSONを生成
-func generateDeepNestedJSON(depth int) string {
-	var sb strings.Builder
-	sb.WriteString(`{"FilePath": "root.wav", "Items": [`)
-	
-	for i := 0; i < depth; i++ {
-		if i > 0 {
-			sb.WriteString(",")
-		}
-		fmt.Fprintf(&sb, `{"FilePath": "level_%d.wav"}`, i)
-	}
-	
-	sb.WriteString("]}")
-	return sb.String()
 } 
