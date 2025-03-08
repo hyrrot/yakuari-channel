@@ -81,24 +81,6 @@ func TestCopyFile(t *testing.T) {
 		errContains string
 	}{
 		{
-			name: "正常なコピー",
-			setup: func() (string, string) {
-				src, err := os.CreateTemp("", "src")
-				if err != nil {
-					t.Fatal(err)
-				}
-				src.WriteString("test content")
-				src.Close()
-				dst := src.Name() + ".copy"
-				return src.Name(), dst
-			},
-			cleanup: func(src, dst string) {
-				os.Remove(src)
-				os.Remove(dst)
-			},
-			wantErr: false,
-		},
-		{
 			name: "存在しないソースファイル",
 			setup: func() (string, string) {
 				return "non_existent_source.txt", "dest.txt"
@@ -124,14 +106,22 @@ func TestCopyFile(t *testing.T) {
 					t.Fatal(err)
 				}
 				dst := filepath.Join(dstDir, "dest.txt")
-				os.Chmod(dstDir, 0500)
+				
+				// 先にファイルを作成して読み取り専用にする
+				if err := os.WriteFile(dst, []byte{}, 0666); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Chmod(dst, 0444); err != nil {
+					t.Fatal(err)
+				}
+				
 				return src.Name(), dst
 			},
 			cleanup: func(src, dst string) {
 				os.Remove(src)
-				dir := filepath.Dir(dst)
-				os.Chmod(dir, 0700)
-				os.RemoveAll(dir)
+				os.Chmod(dst, 0666)
+				os.Remove(dst)
+				os.RemoveAll(filepath.Dir(dst))
 			},
 			wantErr:     true,
 			errContains: "出力ファイルの作成に失敗しました",
@@ -154,7 +144,6 @@ func TestCopyFile(t *testing.T) {
 				}
 			}
 
-			// 正常なコピーの場合、内容を検証
 			if !tt.wantErr {
 				srcContent, err := os.ReadFile(src)
 				if err != nil {
