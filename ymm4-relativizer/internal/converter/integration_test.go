@@ -208,12 +208,17 @@ func TestIntegrationEdgeCases(t *testing.T) {
 			name: "YMMP with non-existent files",
 			setup: func(t *testing.T) string {
 				filePath := "non_existent.wav"
-				ymmp := model.YMMP{
-					Root: model.Item{
-						FilePath: &filePath,
-						Items: []model.Item{
-							{FilePath: &filePath},
-						},
+				ymmp := struct {
+					FilePath *string `json:"FilePath"`
+					Items    []struct {
+						FilePath *string `json:"FilePath"`
+					} `json:"Items"`
+				}{
+					FilePath: &filePath,
+					Items: []struct {
+						FilePath *string `json:"FilePath"`
+					}{
+						{FilePath: &filePath},
 					},
 				}
 				data, err := json.Marshal(ymmp)

@@ -246,7 +246,7 @@ func TestParseYMMPEdgeCases(t *testing.T) {
 					},
 					{
 						"FilePath": "audio.wav",
-						"SubItems": [
+						"Items": [
 							{
 								"FilePath": null
 							}
@@ -256,7 +256,7 @@ func TestParseYMMPEdgeCases(t *testing.T) {
 			}`,
 			expectError: false,
 			validate: func(t *testing.T, ymmp *YMMP) {
-				if ymmp.Root.FilePath == nil || *ymmp.Root.FilePath != "test.wav" {
+				if ymmp.FilePath == nil || *ymmp.FilePath != "test.wav" {
 					t.Error("expected root FilePath to be 'test.wav'")
 				}
 			},
