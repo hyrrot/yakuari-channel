@@ -107,7 +107,7 @@ func TestCopyFile(t *testing.T) {
 				os.Remove(dst)
 			},
 			wantErr:     true,
-			errContains: "no such file",
+			errContains: "ソースファイルのオープンに失敗しました",
 		},
 		{
 			name: "書き込み権限のない出力先",
@@ -123,8 +123,9 @@ func TestCopyFile(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+				dst := filepath.Join(dstDir, "dest.txt")
 				os.Chmod(dstDir, 0500)
-				return src.Name(), filepath.Join(dstDir, "dest.txt")
+				return src.Name(), dst
 			},
 			cleanup: func(src, dst string) {
 				os.Remove(src)
@@ -133,7 +134,7 @@ func TestCopyFile(t *testing.T) {
 				os.RemoveAll(dir)
 			},
 			wantErr:     true,
-			errContains: "permission denied",
+			errContains: "出力ファイルの作成に失敗しました",
 		},
 	}
 
@@ -180,27 +181,27 @@ func TestGenerateHashedFilename(t *testing.T) {
 		{
 			name:         "通常のファイルパス",
 			originalPath: "test.wav",
-			wantPattern: `^[a-f0-9]{32}\.wav$`,
+			wantPattern: `^[0-9a-f]{8}-test\.wav$`,
 		},
 		{
 			name:         "パスを含むファイル名",
 			originalPath: "path/to/test.wav",
-			wantPattern: `^[a-f0-9]{32}\.wav$`,
+			wantPattern: `^[0-9a-f]{8}-test\.wav$`,
 		},
 		{
 			name:         "拡張子なしのファイル",
 			originalPath: "test",
-			wantPattern: `^[a-f0-9]{32}$`,
+			wantPattern: `^[0-9a-f]{8}-test$`,
 		},
 		{
 			name:         "複数の拡張子",
 			originalPath: "test.tar.gz",
-			wantPattern: `^[a-f0-9]{32}\.tar\.gz$`,
+			wantPattern: `^[0-9a-f]{8}-test\.tar\.gz$`,
 		},
 		{
 			name:         "日本語のファイル名",
 			originalPath: "テスト.wav",
-			wantPattern: `^[a-f0-9]{32}\.wav$`,
+			wantPattern: `^[0-9a-f]{8}-テスト\.wav$`,
 		},
 	}
 
