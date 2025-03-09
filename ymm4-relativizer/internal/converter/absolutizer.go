@@ -64,12 +64,11 @@ func Absolutize(config AbsolutizerConfig) error {
 			return path
 		}
 		
-		// Check if file exists
 		if !utils.FileExists(absPath) {
 			if config.SkipMissing {
 				return path
 			}
-			fmt.Fprintf(os.Stderr, "Warning: File does not exist %s\n", absPath)
+			fmt.Fprintf(os.Stderr, "Warning: File does not exist: %s\n", absPath)
 			return path
 		}
 

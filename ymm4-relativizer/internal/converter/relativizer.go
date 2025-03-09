@@ -50,6 +50,7 @@ func Relativize(config RelativizerConfig) error {
 			if config.SkipMissing {
 				return path
 			}
+			fmt.Fprintf(os.Stderr, "Warning: File does not exist: %s\n", path)
 			return path
 		}
 
