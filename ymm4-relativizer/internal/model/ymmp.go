@@ -4,20 +4,20 @@ import (
 	"encoding/json"
 )
 
-// YMMP はYMMPファイルの基本構造を表します
+// YMMP represents the basic structure of a YMMP file
 type YMMP struct {
-	RootFilePath interface{}            `json:"FilePath"` // stringまたはnull
+	RootFilePath interface{}            `json:"FilePath"` // string or null
 	Content      map[string]interface{} `json:"-"`
 }
 
-// FilePathUpdate は FilePath の更新情報を保持します
+// FilePathUpdate holds information about FilePath updates
 type FilePathUpdate struct {
 	Path     string
 	IsRoot   bool
 	Original string
 }
 
-// ParseYMMP はJSONデータからYMMPオブジェクトを生成します
+// ParseYMMP generates a YMMP object from JSON data
 func ParseYMMP(data []byte) (*YMMP, error) {
 	var rawData map[string]interface{}
 	if err := json.Unmarshal(data, &rawData); err != nil {
@@ -42,7 +42,7 @@ func ParseYMMP(data []byte) (*YMMP, error) {
 	return ymmp, nil
 }
 
-// FindAllFilePaths は全てのFilePathフィールドを再帰的に検索します
+// FindAllFilePaths recursively searches for all FilePath fields
 func (y *YMMP) FindAllFilePaths() []FilePathUpdate {
 	paths := []FilePathUpdate{}
 
@@ -61,7 +61,7 @@ func (y *YMMP) FindAllFilePaths() []FilePathUpdate {
 	return paths
 }
 
-// findPaths は再帰的にFilePathフィールドを検索します
+// findPaths recursively searches for FilePath fields
 func findPaths(data interface{}, paths *[]FilePathUpdate, isRoot bool) {
 	switch v := data.(type) {
 	case map[string]interface{}:
@@ -85,7 +85,7 @@ func findPaths(data interface{}, paths *[]FilePathUpdate, isRoot bool) {
 	}
 }
 
-// UpdateFilePaths は全てのFilePathフィールドを更新します
+// UpdateFilePaths updates all FilePath fields
 func (y *YMMP) UpdateFilePaths(updateFunc func(string, bool) string) {
 	// ルートのFilePathを更新
 	if str, ok := y.RootFilePath.(string); ok {
@@ -109,7 +109,7 @@ func (y *YMMP) UpdateFilePaths(updateFunc func(string, bool) string) {
 	y.Content = updatePathsRecursive(y.Content, updateFunc).(map[string]interface{})
 }
 
-// updatePathsRecursive は再帰的にFilePathフィールドを更新します
+// updatePathsRecursive recursively updates FilePath fields
 func updatePathsRecursive(data interface{}, updateFunc func(string, bool) string) interface{} {
 	switch v := data.(type) {
 	case map[string]interface{}:
@@ -148,7 +148,7 @@ func updatePathsRecursive(data interface{}, updateFunc func(string, bool) string
 	}
 }
 
-// ToJSON はYMMPオブジェクトをJSON形式に変換します
+// ToJSON converts the YMMP object to JSON format
 func (y *YMMP) ToJSON() ([]byte, error) {
 	output := make(map[string]interface{})
 	
