@@ -14,7 +14,8 @@
       "Bash(./ymmps-authorizer.exe --help)",
       "Bash(./ymmps-authorizer.exe --validate-only tests/fixtures/simple_scenario.ymmps)",
       "Bash(./ymmps-authorizer.exe --validate-only --verbose tests/fixtures/simple_scenario.ymmps)",
-      "Bash(./ymmps-authorizer.exe --dry-run --template-file tests/fixtures/template.ymmp tests/fixtures/simple_scenario.ymmps)"
+      "Bash(./ymmps-authorizer.exe --dry-run --template-file tests/fixtures/template.ymmp tests/fixtures/simple_scenario.ymmps)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

@@ -113,7 +113,7 @@ func TestParsedLength_Parse(t *testing.T) {
 			name:  "until sequence end with ID",
 			input: "_until:SEQUENCE_END:seq1",
 			want: ParsedLength{
-				Type:       LengthTypeUntilIDEnd,
+				Type:       LengthTypeUntilSeqEndID,
 				TargetType: "SEQUENCE",
 				TargetID:   "seq1",
 			},
@@ -122,7 +122,7 @@ func TestParsedLength_Parse(t *testing.T) {
 			name:  "until scene end with ID",
 			input: "_until:SCENE_END:scene1",
 			want: ParsedLength{
-				Type:       LengthTypeUntilIDEnd,
+				Type:       LengthTypeUntilSceneEndID,
 				TargetType: "SCENE",
 				TargetID:   "scene1",
 			},

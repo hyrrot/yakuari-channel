@@ -8,6 +8,11 @@ import (
 
 // ConvertWithRelativeLengths performs conversion with full relative length support
 func (c *Converter) ConvertWithRelativeLengths(ymmps *models.YMMPSDocument, template *models.YMMPProject) (*models.YMMPProject, error) {
+	// Ensure all elements have IDs for relative length calculations
+	if err := ymmps.EnsureIDs(); err != nil {
+		return nil, fmt.Errorf("failed to ensure IDs: %w", err)
+	}
+	
 	// Deep copy the template
 	result, err := c.deepCopyProject(template)
 	if err != nil {

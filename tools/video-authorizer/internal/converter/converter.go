@@ -38,6 +38,11 @@ func NewConverterWithBasePath(basePath string) *Converter {
 
 // Convert converts YMMPS document to YMMP project using the template
 func (c *Converter) Convert(ymmps *models.YMMPSDocument, template *models.YMMPProject) (*models.YMMPProject, error) {
+	// Ensure all elements have IDs for relative length calculations
+	if err := ymmps.EnsureIDs(); err != nil {
+		return nil, fmt.Errorf("failed to ensure IDs: %w", err)
+	}
+	
 	// Validate template references before conversion
 	if err := c.templateValidator.ValidateTemplateReferences(ymmps, template); err != nil {
 		return nil, fmt.Errorf("template validation failed: %w", err)

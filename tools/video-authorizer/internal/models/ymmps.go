@@ -1,6 +1,8 @@
 package models
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 	"strings"
@@ -35,6 +37,82 @@ func (d *YMMPSDocument) Validate() error {
 	}
 
 	return nil
+}
+
+// EnsureIDs ensures all sequences, scenes, and shots have IDs for relative length calculations
+func (d *YMMPSDocument) EnsureIDs() error {
+	existingIDs := make(map[string]bool)
+	
+	// First pass: collect existing IDs to avoid conflicts
+	for _, sequence := range d.Sequences {
+		if sequence.ID != "" {
+			existingIDs[sequence.ID] = true
+		}
+		for _, scene := range sequence.Scenes {
+			if scene.ID != "" {
+				existingIDs[scene.ID] = true
+			}
+			for _, shot := range scene.Shots {
+				if shot.ID != "" {
+					existingIDs[shot.ID] = true
+				}
+			}
+		}
+	}
+	
+	// Second pass: generate IDs for missing ones
+	for i := range d.Sequences {
+		if d.Sequences[i].ID == "" {
+			id, err := generateUniqueID("seq", existingIDs)
+			if err != nil {
+				return fmt.Errorf("failed to generate sequence ID: %w", err)
+			}
+			d.Sequences[i].ID = id
+		}
+		
+		for j := range d.Sequences[i].Scenes {
+			if d.Sequences[i].Scenes[j].ID == "" {
+				id, err := generateUniqueID("scene", existingIDs)
+				if err != nil {
+					return fmt.Errorf("failed to generate scene ID: %w", err)
+				}
+				d.Sequences[i].Scenes[j].ID = id
+			}
+			
+			for k := range d.Sequences[i].Scenes[j].Shots {
+				if d.Sequences[i].Scenes[j].Shots[k].ID == "" {
+					id, err := generateUniqueID("shot", existingIDs)
+					if err != nil {
+						return fmt.Errorf("failed to generate shot ID: %w", err)
+					}
+					d.Sequences[i].Scenes[j].Shots[k].ID = id
+				}
+			}
+		}
+	}
+	
+	return nil
+}
+
+// generateUniqueID generates a unique ID with the given prefix
+func generateUniqueID(prefix string, existingIDs map[string]bool) (string, error) {
+	for attempts := 0; attempts < 10; attempts++ {
+		// Generate 6 random bytes (12 hex characters)
+		randomBytes := make([]byte, 6)
+		if _, err := rand.Read(randomBytes); err != nil {
+			return "", fmt.Errorf("failed to generate random bytes: %w", err)
+		}
+		
+		id := "__auto_" + prefix + "_" + hex.EncodeToString(randomBytes)
+		
+		// Check if this ID already exists
+		if !existingIDs[id] {
+			existingIDs[id] = true
+			return id, nil
+		}
+	}
+	
+	return "", fmt.Errorf("failed to generate unique ID after 10 attempts")
 }
 
 // Sequence represents a sequence containing multiple scenes

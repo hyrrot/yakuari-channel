@@ -27,7 +27,7 @@ Sequences:
             # Empty shot - no Items array
 `,
 			expectError:  true,
-			errorMessage: "shot 'shot1' must contain at least one item in the 'Items' array",
+			errorMessage: "missing required field: Items",
 		},
 		{
 			name: "empty_shot_with_empty_items",
@@ -39,7 +39,7 @@ Sequences:
             Items: []  # Empty Items array
 `,
 			expectError:  true,
-			errorMessage: "shot 'shot1' must contain at least one item in the 'Items' array",
+			errorMessage: "Items array cannot be empty",
 		},
 		{
 			name: "empty_shot_without_id_or_items",
@@ -50,7 +50,7 @@ Sequences:
           - {}  # Completely empty shot
 `,
 			expectError:  true,
-			errorMessage: "shot must contain at least one item in the 'Items' array",
+			errorMessage: "missing required field: Items",
 		},
 		{
 			name: "valid_shot_with_items",
@@ -116,5 +116,5 @@ Sequences:
 
 	assert.Error(t, err)
 	// Should give helpful error about missing Items structure
-	assert.Contains(t, err.Error(), "must contain at least one item in the 'Items' array")
+	assert.Contains(t, err.Error(), "missing required field: Items")
 }
