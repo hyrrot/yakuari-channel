@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go get:*)",
+      "Bash(go test:*)",
+      "Bash(rm:*)",
+      "Bash(go build:*)",
+      "Bash(./ymmps-authorizer:*)",
+      "Bash(ls:*)"
+    ],
+    "deny": []
+  }
+}

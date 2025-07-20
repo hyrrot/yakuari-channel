@@ -2,70 +2,74 @@ package models
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestYMMPProjectStructure(t *testing.T) {
-	// Red: This test will fail because YMMPProject doesn't exist yet
-	project := YMMPProject{
-		Timeline: Timeline{
-			Items: []YMMPItem{
-				{
-					Type:     "YMM.Parts.ImagePart",
-					Layer:    1,
-					Frame:    0,
-					Length:   300, // 5 seconds at 60fps
-					FilePath: "/path/to/image.png",
-				},
-				{
-					Type:     "YMM.Parts.VoicePart",
-					Layer:    2,
-					Frame:    0,
-					Length:   180, // 3 seconds at 60fps
-					FilePath: "/path/to/voice.wav",
+func TestYMMPProject_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		project YMMPProject
+		wantErr bool
+	}{
+		{
+			name: "valid project",
+			project: YMMPProject{
+				FilePath:              "/path/to/project.ymmp",
+				SelectedTimelineIndex: 0,
+				Timelines: []Timeline{
+					{
+						ID:   "timeline-1",
+						Name: "メイン",
+						VideoInfo: VideoInfo{
+							FPS:    60,
+							Hz:     48000,
+							Width:  1920,
+							Height: 1080,
+						},
+						Items: []interface{}{},
+					},
 				},
 			},
+			wantErr: false,
+		},
+		{
+			name: "empty timelines",
+			project: YMMPProject{
+				FilePath:  "/path/to/project.ymmp",
+				Timelines: []Timeline{},
+			},
+			wantErr: true,
 		},
 	}
-	
-	if len(project.Timeline.Items) != 2 {
-		t.Errorf("Expected 2 items, got %d", len(project.Timeline.Items))
-	}
-	
-	imageItem := project.Timeline.Items[0]
-	if imageItem.Type != "YMM.Parts.ImagePart" {
-		t.Errorf("Expected type 'YMM.Parts.ImagePart', got %s", imageItem.Type)
-	}
-	
-	if imageItem.Layer != 1 {
-		t.Errorf("Expected layer 1, got %d", imageItem.Layer)
-	}
-	
-	if imageItem.Length != 300 {
-		t.Errorf("Expected length 300, got %d", imageItem.Length)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.project.Validate()
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
 	}
 }
 
-func TestYMMPItemExtendedProperties(t *testing.T) {
-	// Red: This test will fail because YMMPItem doesn't exist yet
-	item := YMMPItem{
-		Type:     "YMM.Parts.ImagePart",
-		Layer:    1,
-		Frame:    0,
-		Length:   300,
-		FilePath: "/path/to/image.png",
-		Extended: map[string]interface{}{
-			"X":      160,
-			"Y":      90,
-			"Zoom":   1.0,
-			"Alpha":  255,
-		},
+func TestBaseItem_GetRemark(t *testing.T) {
+	item := BaseItem{
+		Frame:  0,
+		Layer:  0,
+		Length: 100,
+		Remark: "test item",
 	}
-	
-	if item.Extended["X"] != 160 {
-		t.Errorf("Expected X=160, got %v", item.Extended["X"])
+
+	assert.Equal(t, "test item", item.GetRemark())
+}
+
+func TestVoiceItem_GetType(t *testing.T) {
+	item := VoiceItem{
+		Type: "YukkuriMovieMaker.Project.Items.VoiceItem, YukkuriMovieMaker",
 	}
-	
-	if item.Extended["Zoom"] != 1.0 {
-		t.Errorf("Expected Zoom=1.0, got %v", item.Extended["Zoom"])
-	}
+
+	assert.Equal(t, "YukkuriMovieMaker.Project.Items.VoiceItem, YukkuriMovieMaker", item.GetType())
 }

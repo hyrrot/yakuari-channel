@@ -1,0 +1,170 @@
+YukkuriMovieMaker プロジェクトファイル (.ymmp) フォーマット仕様書
+==================================================================
+
+1. 概要
+-------
+YMMPファイルは、ゆっくりMovieMaker4のプロジェクトファイルで、JSON形式で保存されています。
+このファイルには、動画プロジェクトの全ての設定、タイムライン情報、キャラクター設定、
+アイテム配置などが含まれています。
+
+2. ファイル構造
+---------------
+ルートオブジェクトには以下の主要なプロパティが含まれます：
+
+- FilePath: プロジェクトファイルのフルパス
+- SelectedTimelineIndex: 現在選択されているタイムラインのインデックス
+- Timelines: タイムライン情報の配列
+- Characters: キャラクター設定の配列
+- CollapsedGroups: 折りたたまれたグループの配列
+
+3. タイムライン (Timelines)
+---------------------------
+各タイムラインには以下の情報が含まれます：
+
+### 3.1 基本情報
+- ID: タイムラインの一意識別子 (GUID形式)
+- Name: タイムライン名
+- VideoInfo: ビデオ設定
+  - FPS: フレームレート (例: 60)
+  - Hz: オーディオサンプリングレート (例: 48000)
+  - Width: 動画の幅 (例: 1920)
+  - Height: 動画の高さ (例: 1080)
+
+### 3.2 タイムライン設定
+- VerticalLine: 垂直線の設定（BPM等）
+- CurrentFrame: 現在のフレーム位置
+- Length: タイムラインの総フレーム数
+- MaxLayer: 最大レイヤー数
+- LayerSettings: レイヤー設定
+
+### 3.3 アイテム (Items)
+タイムライン上に配置される要素の配列。各アイテムは$typeプロパティで種類が識別されます。
+
+4. アイテムタイプ
+-----------------
+
+### 4.1 VoiceItem (音声アイテム)
+音声合成による台詞を表現するアイテム。
+
+主要プロパティ：
+- $type: "YukkuriMovieMaker.Project.Items.VoiceItem, YukkuriMovieMaker"
+- CharacterName: キャラクター名
+- Serif: 台詞テキスト
+- Hatsuon: 発音記号
+- Pronounce: 発音詳細情報（VOICEVOXの場合）
+  - AudioQuery: 音声クエリ情報
+    - accent_phrases: アクセント句の配列
+    - speedScale: 話速
+    - pitchScale: 音高
+    - volumeScale: 音量
+- VoiceParameter: 音声パラメータ
+  - StyleID: 音声スタイルID
+  - Speed: 話速（%）
+  - Pitch: 音高（%）
+  - Intonation: 抑揚（%）
+
+位置・表示設定：
+- Frame: 開始フレーム
+- Layer: レイヤー番号
+- Length: アイテムの長さ（フレーム数）
+- X, Y, Z: 字幕の位置座標
+- Font: フォント名
+- FontSize: フォントサイズ
+- FontColor: フォント色
+- Style: 文字装飾スタイル
+- StyleColor: 装飾色
+
+### 4.2 TachieItem (立ち絵アイテム)
+キャラクターの立ち絵画像を表示するアイテム。
+
+主要プロパティ：
+- $type: "YukkuriMovieMaker.Project.Items.TachieItem, YukkuriMovieMaker"
+- CharacterName: キャラクター名
+- TachieItemParameter: 立ち絵パラメータ
+  - FilePath: PSDファイルのパス
+  - EnableLayers: 有効なレイヤーIDの配列
+  - IsHiddenWhenNoSpeech: 台詞がない時に非表示にするか
+
+位置・表示設定：
+- X, Y, Z: 立ち絵の位置
+- Zoom: 拡大率（%）
+- Opacity: 不透明度（%）
+- Rotation: 回転角度
+
+### 4.3 VideoItem (ビデオアイテム)
+動画ファイルを配置するアイテム。
+
+主要プロパティ：
+- $type: "YukkuriMovieMaker.Project.Items.VideoItem, YukkuriMovieMaker"
+- FilePath: 動画ファイルのパス
+- AudioTrackIndex: 使用するオーディオトラック
+- Volume: 音量設定
+- PlaybackRate: 再生速度（%）
+
+5. キャラクター設定 (Characters)
+---------------------------------
+各キャラクターの基本設定を定義。
+
+主要プロパティ：
+- Name: キャラクター名
+- GroupName: グループ名（例: "VOICEVOX"）
+- Color: キャラクターカラー（#AARRGGBB形式）
+- Layer: デフォルトレイヤー
+- Voice: 音声エンジン設定
+  - API: 使用する音声API
+  - Arg: APIの引数
+
+デフォルト音声設定：
+- VoiceParameter: 音声パラメータのデフォルト値
+- Volume: デフォルト音量
+- PlaybackRate: デフォルト再生速度
+
+デフォルト字幕設定：
+- Font: デフォルトフォント
+- FontSize: デフォルトフォントサイズ
+- FontColor: デフォルト文字色
+- Style: デフォルトスタイル
+- X, Y: デフォルト字幕位置
+
+デフォルト立ち絵設定：
+- TachieCharacterParameter: 立ち絵の基本設定
+- TachieDefaultItemParameter: 立ち絵のデフォルト表示設定
+- TachieX, TachieY: デフォルト立ち絵位置
+- TachieZoom: デフォルト立ち絵サイズ
+
+6. アニメーション値
+-------------------
+多くのプロパティはアニメーション可能で、以下の構造を持ちます：
+
+```json
+{
+  "Values": [{"Value": 数値}],
+  "Span": アニメーション期間,
+  "AnimationType": "なし" | その他のアニメーションタイプ
+}
+```
+
+7. 特殊な型表記
+---------------
+.NET/C#のオブジェクト型情報が含まれており、$typeプロパティで識別されます。
+形式: "名前空間.クラス名, アセンブリ名"
+
+例：
+- "YukkuriMovieMaker.Project.Items.VoiceItem, YukkuriMovieMaker"
+- "YukkuriMovieMaker.Voice.VOICEVOXVoiceParameter, YukkuriMovieMaker"
+
+8. その他の重要な要素
+---------------------
+- Remark: 各アイテムのメモ/コメント
+- IsLocked: アイテムのロック状態
+- IsHidden: アイテムの表示/非表示状態
+- KeyFrames: キーフレームアニメーション情報
+- VideoEffects: ビデオエフェクトの配列
+- AudioEffects: オーディオエフェクトの配列
+
+9. 注意事項
+-----------
+- ファイルパスはWindowsのパス形式で、バックスラッシュはエスケープされています（\\\\）
+- 色は#AARRGGBB形式（アルファ値を含む）で指定されます
+- 時間はTimeSpan形式（"HH:MM:SS.fffffff"）で表現されます
+- フレーム数は60FPSを基準としています（template.ymmpの例）

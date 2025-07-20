@@ -1,0 +1,196 @@
+{
+  "FilePath": "template.ymmp",
+  "SelectedTimelineIndex": 0,
+  "Timelines": [
+    {
+      "ID": "main_timeline",
+      "Name": "メインタイムライン",
+      "VideoInfo": {
+        "FPS": 60,
+        "Hz": 48000,
+        "Width": 1920,
+        "Height": 1080
+      },
+      "VerticalLine": {
+        "IsEnabled": false,
+        "StartFrame": 0,
+        "LineType": 0,
+        "Line": null,
+        "Group": 0
+      },
+      "Items": [
+        {
+          "$type": "YukkuriMovieMaker.Project.TachieItem",
+          "Frame": 0,
+          "Layer": 1,
+          "Length": 300,
+          "Remark": "ずんだもん立ち絵01",
+          "IsLocked": false,
+          "IsHidden": false,
+          "Group": 0,
+          "KeyFrames": {
+            "Frames": null,
+            "Count": 0
+          },
+          "CharacterName": "ずんだもん",
+          "TachieItemParameter": null,
+          "X": {
+            "Values": null,
+            "Span": 0,
+            "AnimationType": ""
+          },
+          "Y": {
+            "Values": null,
+            "Span": 0,
+            "AnimationType": ""
+          },
+          "Zoom": {
+            "Values": null,
+            "Span": 0,
+            "AnimationType": ""
+          }
+        },
+        {
+          "$type": "YukkuriMovieMaker.Project.VoiceItem",
+          "Frame": 0,
+          "Layer": 0,
+          "Length": 120,
+          "Remark": "ずんだもんvoice 01",
+          "IsLocked": false,
+          "IsHidden": false,
+          "Group": 0,
+          "KeyFrames": {
+            "Frames": null,
+            "Count": 0
+          },
+          "CharacterName": "ずんだもん",
+          "Serif": "ずんだもんなのだ",
+          "Hatsuon": "",
+          "VoiceLength": null,
+          "X": {
+            "Values": null,
+            "Span": 0,
+            "AnimationType": ""
+          },
+          "Y": {
+            "Values": null,
+            "Span": 0,
+            "AnimationType": ""
+          },
+          "Font": "",
+          "FontSize": {
+            "Values": null,
+            "Span": 0,
+            "AnimationType": ""
+          },
+          "FontColor": "",
+          "Style": "",
+          "StyleColor": ""
+        },
+        {
+          "$type": "YukkuriMovieMaker.Project.VideoItem",
+          "Frame": 300,
+          "Layer": 2,
+          "Length": 0,
+          "Remark": "ビデオ",
+          "IsLocked": false,
+          "IsHidden": false,
+          "Group": 0,
+          "KeyFrames": {
+            "Frames": null,
+            "Count": 0
+          },
+          "FilePath": "image.png",
+          "Volume": {
+            "Values": null,
+            "Span": 0,
+            "AnimationType": ""
+          },
+          "PlaybackRate": 100,
+          "X": {
+            "Values": null,
+            "Span": 0,
+            "AnimationType": ""
+          },
+          "Y": {
+            "Values": null,
+            "Span": 0,
+            "AnimationType": ""
+          },
+          "Zoom": {
+            "Values": null,
+            "Span": 0,
+            "AnimationType": ""
+          }
+        },
+        {
+          "$type": "YukkuriMovieMaker.Project.VoiceItem",
+          "Frame": 300,
+          "Layer": 0,
+          "Length": 180,
+          "Remark": "ずんだもんvoice 01",
+          "IsLocked": false,
+          "IsHidden": false,
+          "Group": 0,
+          "KeyFrames": {
+            "Frames": null,
+            "Count": 0
+          },
+          "CharacterName": "ずんだもん",
+          "Serif": "今日はこの沼について語るよ",
+          "Hatsuon": "",
+          "VoiceLength": null,
+          "X": {
+            "Values": null,
+            "Span": 0,
+            "AnimationType": ""
+          },
+          "Y": {
+            "Values": null,
+            "Span": 0,
+            "AnimationType": ""
+          },
+          "Font": "",
+          "FontSize": {
+            "Values": null,
+            "Span": 0,
+            "AnimationType": ""
+          },
+          "FontColor": "",
+          "Style": "",
+          "StyleColor": ""
+        }
+      ],
+      "LayerSettings": {
+        "Items": [
+          {
+            "Layer": 0,
+            "Label": null,
+            "Color": "#00FFFFFF",
+            "IsHidden": false,
+            "Volume": 100
+          },
+          {
+            "Layer": 1,
+            "Label": null,
+            "Color": "#00FFFFFF",
+            "IsHidden": false,
+            "Volume": 100
+          },
+          {
+            "Layer": 2,
+            "Label": null,
+            "Color": "#00FFFFFF",
+            "IsHidden": false,
+            "Volume": 100
+          }
+        ]
+      },
+      "CurrentFrame": 0,
+      "Length": 480,
+      "MaxLayer": 2
+    }
+  ],
+  "Characters": [],
+  "CollapsedGroups": []
+}

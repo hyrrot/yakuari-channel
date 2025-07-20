@@ -1,0 +1,32 @@
+YMMPSVersion: "1"
+
+# 現在の実装に対応した正しい形式
+Sequences:
+- ID: sequence1
+  Scenes:
+  - ID: scene1
+    Shots:
+    - ID: shot1
+      Items:
+      - Type: TachieItem
+        Template: "ずんだもん立ち絵01"
+        Length: "UNTIL SEQUENCE END"
+      - Type: VoiceItem
+        Template: "ずんだもんvoice 01"
+        Length: "120"  # フレーム数指定（_autoは未実装のため）
+        Properties:
+          Serif: "ずんだもんなのだ"
+  - ID: scene2
+    Shots:
+    - ID: shot2
+      Items:
+      - Type: VideoItem
+        Template: "ビデオ"
+        Length: "UNTIL SCENE END"
+        Properties:
+          FilePath: "image.png"
+      - Type: VoiceItem
+        Template: "ずんだもんvoice 01"
+        Length: "180"  # フレーム数指定
+        Properties:
+          Serif: "今日はこの沼について語るよ"
