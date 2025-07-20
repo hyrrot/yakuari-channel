@@ -10,20 +10,69 @@ import (
 
 // Converter handles the conversion from YMMPS to YMMP
 type Converter struct {
-	lengthCalculator *AdvancedLengthCalculator
+	lengthCalculator  *AdvancedLengthCalculator
+	pathResolver      *PathResolver
+	templateValidator *TemplateValidator
+	filePathUpdater   *FilePathUpdater
 }
 
 // NewConverter creates a new converter
 func NewConverter() *Converter {
 	return &Converter{
-		lengthCalculator: NewAdvancedLengthCalculator(),
+		lengthCalculator:  NewAdvancedLengthCalculator(),
+		pathResolver:      NewPathResolver(""),
+		templateValidator: NewTemplateValidator(),
+		filePathUpdater:   NewFilePathUpdater(),
+	}
+}
+
+// NewConverterWithBasePath creates a new converter with a base path for relative path resolution
+func NewConverterWithBasePath(basePath string) *Converter {
+	return &Converter{
+		lengthCalculator:  NewAdvancedLengthCalculator(),
+		pathResolver:      NewPathResolver(basePath),
+		templateValidator: NewTemplateValidator(),
+		filePathUpdater:   NewFilePathUpdater(),
 	}
 }
 
 // Convert converts YMMPS document to YMMP project using the template
 func (c *Converter) Convert(ymmps *models.YMMPSDocument, template *models.YMMPProject) (*models.YMMPProject, error) {
+	// Validate template references before conversion
+	if err := c.templateValidator.ValidateTemplateReferences(ymmps, template); err != nil {
+		return nil, fmt.Errorf("template validation failed: %w", err)
+	}
+	
+	// Check template compatibility (warnings only)
+	if err := c.templateValidator.ValidateTemplateCompatibility(ymmps, template); err != nil {
+		// Template compatibility issues are warnings, not errors
+		fmt.Printf("Template compatibility warnings: %v\n", err)
+	}
+	
 	// Use advanced conversion with relative length support
 	return c.ConvertWithRelativeLengths(ymmps, template)
+}
+
+// ConvertWithOutput converts YMMPS document to YMMP project and updates FilePath elements
+func (c *Converter) ConvertWithOutput(ymmps *models.YMMPSDocument, template *models.YMMPProject, outputPath string) (*models.YMMPProject, error) {
+	// Perform normal conversion
+	project, err := c.Convert(ymmps, template)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Update FilePath elements
+	basePath := c.pathResolver.GetBasePath()
+	if basePath == "" {
+		// Use output directory as base path if no explicit base path is set
+		basePath = c.filePathUpdater.GetOutputDirectory(outputPath)
+	}
+	
+	if err := c.filePathUpdater.UpdateAllFilePaths(project, outputPath, basePath); err != nil {
+		return nil, fmt.Errorf("failed to update file paths: %w", err)
+	}
+	
+	return project, nil
 }
 
 // processSequence processes a sequence and adds items to the timeline
@@ -184,6 +233,9 @@ func (c *Converter) applyPropertyOverrides(item interface{}, properties map[stri
 		return nil
 	}
 
+	// Resolve paths in properties
+	resolvedProperties := c.pathResolver.ResolveItemProperties(properties)
+
 	// Convert item to JSON, apply overrides, and convert back
 	// This is a simple approach that works for basic property overrides
 	itemJSON, err := json.Marshal(item)
@@ -197,7 +249,7 @@ func (c *Converter) applyPropertyOverrides(item interface{}, properties map[stri
 	}
 
 	// Apply overrides
-	for key, value := range properties {
+	for key, value := range resolvedProperties {
 		itemMap[key] = value
 	}
 

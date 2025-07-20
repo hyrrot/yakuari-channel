@@ -19,11 +19,42 @@ func NewYMMPSParser() *YMMPSParser {
 
 // Parse parses YMMPS content from a reader
 func (p *YMMPSParser) Parse(reader io.Reader) (*models.YMMPSDocument, error) {
-	// First, decode into a raw structure to handle inline items
-	var raw rawYMMPSDocument
-	decoder := yaml.NewDecoder(reader)
-	if err := decoder.Decode(&raw); err != nil {
+	// Read all data first for validation
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read input: %w", err)
+	}
+
+	// Validate YAML syntax
+	validator := NewYAMLStructureValidator()
+	if err := validator.ValidateYAMLSyntax(data); err != nil {
+		return nil, fmt.Errorf("YAML syntax validation failed: %w", err)
+	}
+
+	// Parse into generic structure for detailed validation
+	var rawInterface interface{}
+	if err := yaml.Unmarshal(data, &rawInterface); err != nil {
 		return nil, fmt.Errorf("failed to parse YAML: %w", err)
+	}
+
+	// Validate YMMPS structure
+	if err := validator.ValidateYMMPSStructure(rawInterface); err != nil {
+		return nil, fmt.Errorf("YMMPS structure validation failed: %w", err)
+	}
+
+	// Check for common issues and warn
+	if issues := validator.DetectCommonYAMLIssues(rawInterface); len(issues) > 0 {
+		// For now, we just log warnings. In production, these could be returned as warnings
+		fmt.Printf("Warning: Detected potential issues in YMMPS file:\n")
+		for _, issue := range issues {
+			fmt.Printf("  - %s\n", issue)
+		}
+	}
+
+	// Now decode into typed structure
+	var raw rawYMMPSDocument
+	if err := yaml.Unmarshal(data, &raw); err != nil {
+		return nil, fmt.Errorf("failed to parse YAML into typed structure: %w", err)
 	}
 
 	// Convert raw document to models.YMMPSDocument

@@ -29,6 +29,11 @@ func (d *YMMPSDocument) Validate() error {
 		}
 	}
 
+	// Validate ID references
+	if err := d.ValidateReferences(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -129,13 +134,16 @@ func (i *ItemSpec) Validate() error {
 type LengthType string
 
 const (
-	LengthTypeNumeric       LengthType = "numeric"
-	LengthTypeUntilSeqEnd   LengthType = "until_seq"
-	LengthTypeUntilSceneEnd LengthType = "until_scene"
-	LengthTypeUntilShotEnd  LengthType = "until_shot"
-	LengthTypeUntilIDEnd    LengthType = "until_id"
-	LengthTypeAutoVoice     LengthType = "auto_voice"
-	LengthTypeAutoVideo     LengthType = "auto_video"
+	LengthTypeNumeric         LengthType = "numeric"
+	LengthTypeUntilSeqEnd     LengthType = "until_seq"
+	LengthTypeUntilSceneEnd   LengthType = "until_scene"
+	LengthTypeUntilShotEnd    LengthType = "until_shot"
+	LengthTypeUntilSeqEndID   LengthType = "until_seq_id"
+	LengthTypeUntilSceneEndID LengthType = "until_scene_id"
+	LengthTypeUntilShotEndID  LengthType = "until_shot_id"
+	LengthTypeUntilIDEnd      LengthType = "until_id" // Deprecated, for backward compatibility
+	LengthTypeAutoVoice       LengthType = "auto_voice"
+	LengthTypeAutoVideo       LengthType = "auto_video"
 )
 
 // ParsedLength represents parsed length information
@@ -178,19 +186,19 @@ func ParseLength(length string) (ParsedLength, error) {
 			switch targetType {
 			case "SEQUENCE":
 				return ParsedLength{
-					Type:       LengthTypeUntilIDEnd,
+					Type:       LengthTypeUntilSeqEndID,
 					TargetType: "SEQUENCE",
 					TargetID:   targetID,
 				}, nil
 			case "SCENE":
 				return ParsedLength{
-					Type:       LengthTypeUntilIDEnd,
+					Type:       LengthTypeUntilSceneEndID,
 					TargetType: "SCENE",
 					TargetID:   targetID,
 				}, nil
 			case "SHOT":
 				return ParsedLength{
-					Type:       LengthTypeUntilIDEnd,
+					Type:       LengthTypeUntilShotEndID,
 					TargetType: "SHOT",
 					TargetID:   targetID,
 				}, nil
@@ -211,7 +219,7 @@ func ParseLength(length string) (ParsedLength, error) {
 				return ParsedLength{Type: LengthTypeUntilSeqEnd}, nil
 			} else if len(parts) == 3 {
 				return ParsedLength{
-					Type:       LengthTypeUntilIDEnd,
+					Type:       LengthTypeUntilSeqEndID,
 					TargetType: "SEQUENCE",
 					TargetID:   parts[2],
 				}, nil
@@ -221,7 +229,7 @@ func ParseLength(length string) (ParsedLength, error) {
 				return ParsedLength{Type: LengthTypeUntilSceneEnd}, nil
 			} else if len(parts) == 3 {
 				return ParsedLength{
-					Type:       LengthTypeUntilIDEnd,
+					Type:       LengthTypeUntilSceneEndID,
 					TargetType: "SCENE",
 					TargetID:   parts[2],
 				}, nil
@@ -231,7 +239,7 @@ func ParseLength(length string) (ParsedLength, error) {
 				return ParsedLength{Type: LengthTypeUntilShotEnd}, nil
 			} else if len(parts) == 3 {
 				return ParsedLength{
-					Type:       LengthTypeUntilIDEnd,
+					Type:       LengthTypeUntilShotEndID,
 					TargetType: "SHOT",
 					TargetID:   parts[2],
 				}, nil

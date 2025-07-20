@@ -10,7 +10,11 @@
       "Bash(go run:*)",
       "Bash(mv:*)",
       "Bash(rm:*)",
-      "Bash(./ymmp-compiler.exe --help)"
+      "Bash(./ymmp-compiler.exe --help)",
+      "Bash(./ymmps-authorizer.exe --help)",
+      "Bash(./ymmps-authorizer.exe --validate-only tests/fixtures/simple_scenario.ymmps)",
+      "Bash(./ymmps-authorizer.exe --validate-only --verbose tests/fixtures/simple_scenario.ymmps)",
+      "Bash(./ymmps-authorizer.exe --dry-run --template-file tests/fixtures/template.ymmp tests/fixtures/simple_scenario.ymmps)"
     ],
     "deny": []
   }

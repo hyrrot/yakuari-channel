@@ -53,11 +53,17 @@ func (ctx *CompileContext) RegisterShotEnd(id string, endFrame int) {
 }
 
 // LengthCalculator handles calculation of item lengths
-type LengthCalculator struct{}
+type LengthCalculator struct {
+	voicevoxClient *VoicevoxClient
+	ffprobeClient  *FFProbeClient
+}
 
 // NewLengthCalculator creates a new length calculator
 func NewLengthCalculator() *LengthCalculator {
-	return &LengthCalculator{}
+	return &LengthCalculator{
+		voicevoxClient: NewVoicevoxClient(""),
+		ffprobeClient:  NewFFProbeClient(""),
+	}
 }
 
 // CalculateLength calculates the length for an item based on the length specification
@@ -80,16 +86,66 @@ func (lc *LengthCalculator) CalculateLength(lengthStr string, ctx *CompileContex
 	case models.LengthTypeUntilShotEnd:
 		return lc.calculateUntilShotEnd(ctx)
 
+	case models.LengthTypeUntilSeqEndID:
+		return lc.calculateUntilIDEnd("SEQUENCE", parsed.TargetID, ctx)
+		
+	case models.LengthTypeUntilSceneEndID:
+		return lc.calculateUntilIDEnd("SCENE", parsed.TargetID, ctx)
+		
+	case models.LengthTypeUntilShotEndID:
+		return lc.calculateUntilIDEnd("SHOT", parsed.TargetID, ctx)
+		
 	case models.LengthTypeUntilIDEnd:
 		return lc.calculateUntilIDEnd(parsed.TargetType, parsed.TargetID, ctx)
 
 	case models.LengthTypeAutoVoice:
-		// TODO: Implement in Phase 7
-		return 0, fmt.Errorf("auto voice length calculation not yet implemented")
+		return lc.calculateAutoVoiceLength(ctx)
 
 	case models.LengthTypeAutoVideo:
-		// TODO: Implement in Phase 7
-		return 0, fmt.Errorf("auto video length calculation not yet implemented")
+		return lc.calculateAutoVideoLength(ctx)
+
+	default:
+		return 0, fmt.Errorf("unsupported length type: %v", parsed.Type)
+	}
+}
+
+// CalculateLengthForItem calculates the length for a specific item with context
+func (lc *LengthCalculator) CalculateLengthForItem(lengthStr string, item interface{}, ctx *CompileContext) (int, error) {
+	parsed, err := models.ParseLength(lengthStr)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse length: %w", err)
+	}
+
+	switch parsed.Type {
+	case models.LengthTypeNumeric:
+		return parsed.Value, nil
+
+	case models.LengthTypeUntilSeqEnd:
+		return lc.calculateUntilSequenceEnd(ctx)
+
+	case models.LengthTypeUntilSceneEnd:
+		return lc.calculateUntilSceneEnd(ctx)
+
+	case models.LengthTypeUntilShotEnd:
+		return lc.calculateUntilShotEnd(ctx)
+
+	case models.LengthTypeUntilSeqEndID:
+		return lc.calculateUntilIDEnd("SEQUENCE", parsed.TargetID, ctx)
+		
+	case models.LengthTypeUntilSceneEndID:
+		return lc.calculateUntilIDEnd("SCENE", parsed.TargetID, ctx)
+		
+	case models.LengthTypeUntilShotEndID:
+		return lc.calculateUntilIDEnd("SHOT", parsed.TargetID, ctx)
+		
+	case models.LengthTypeUntilIDEnd:
+		return lc.calculateUntilIDEnd(parsed.TargetType, parsed.TargetID, ctx)
+
+	case models.LengthTypeAutoVoice:
+		return lc.calculateAutoVoiceLengthForItem(item)
+
+	case models.LengthTypeAutoVideo:
+		return lc.calculateAutoVideoLengthForItem(item)
 
 	default:
 		return 0, fmt.Errorf("unsupported length type: %v", parsed.Type)
@@ -231,4 +287,104 @@ func (alc *AdvancedLengthCalculator) calculateShotEndFrame(shot models.Shot, sta
 	}
 	
 	return maxEndFrame, nil
+}
+
+// calculateAutoVoiceLength calculates voice length using VOICEVOX (fallback method)
+func (lc *LengthCalculator) calculateAutoVoiceLength(ctx *CompileContext) (int, error) {
+	return 0, fmt.Errorf("auto voice length calculation requires item context; use CalculateLengthForItem instead")
+}
+
+// calculateAutoVoiceLengthForItem calculates voice length for a specific voice item
+func (lc *LengthCalculator) calculateAutoVoiceLengthForItem(item interface{}) (int, error) {
+	// Check if VOICEVOX is available
+	if !lc.voicevoxClient.IsAvailable() {
+		return 0, fmt.Errorf("VOICEVOX API is not available at %s", lc.voicevoxClient.baseURL)
+	}
+
+	// Extract text and speaker from voice item
+	text, speaker, err := lc.extractVoiceItemData(item)
+	if err != nil {
+		return 0, fmt.Errorf("failed to extract voice data: %w", err)
+	}
+
+	// Get duration from VOICEVOX
+	duration, err := lc.voicevoxClient.GetAudioDuration(text, speaker)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get audio duration from VOICEVOX: %w", err)
+	}
+
+	// Convert to frames (assuming 30 FPS)
+	frames := ConvertDurationToFrames(duration, 30.0)
+	
+	return frames, nil
+}
+
+// calculateAutoVideoLength calculates video length using ffprobe (fallback method)
+func (lc *LengthCalculator) calculateAutoVideoLength(ctx *CompileContext) (int, error) {
+	return 0, fmt.Errorf("auto video length calculation requires item context; use CalculateLengthForItem instead")
+}
+
+// calculateAutoVideoLengthForItem calculates video length for a specific video item
+func (lc *LengthCalculator) calculateAutoVideoLengthForItem(item interface{}) (int, error) {
+	// Check if ffprobe is available
+	if !lc.ffprobeClient.IsAvailable() {
+		return 0, fmt.Errorf("ffprobe is not available")
+	}
+
+	// Extract file path from video item
+	filePath, err := lc.extractVideoItemFilePath(item)
+	if err != nil {
+		return 0, fmt.Errorf("failed to extract video file path: %w", err)
+	}
+
+	// Get duration from ffprobe
+	duration, err := lc.ffprobeClient.GetVideoDuration(filePath)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get video duration from ffprobe: %w", err)
+	}
+
+	// Convert to frames (assuming 30 FPS by default, could be improved to use actual video FPS)
+	frames := ConvertDurationToFrames(duration, 30.0)
+	
+	return frames, nil
+}
+
+// extractVoiceItemData extracts text and speaker from voice item
+func (lc *LengthCalculator) extractVoiceItemData(item interface{}) (string, int, error) {
+	switch v := item.(type) {
+	case *models.VoiceItem:
+		// Extract text from Serif field
+		text := v.Serif
+		if text == "" {
+			return "", 0, fmt.Errorf("voice item has no Serif text")
+		}
+		
+		// Extract speaker from CharacterName or default to 0
+		// In a real implementation, you would look up the character configuration
+		// and get the speaker ID from the Voice settings
+		speaker := 0
+		
+		// TODO: Implement character-to-speaker mapping
+		// For now, use a simple default
+		
+		return text, speaker, nil
+		
+	default:
+		return "", 0, fmt.Errorf("item is not a voice item")
+	}
+}
+
+// extractVideoItemFilePath extracts file path from video item
+func (lc *LengthCalculator) extractVideoItemFilePath(item interface{}) (string, error) {
+	switch v := item.(type) {
+	case *models.VideoItem:
+		// Extract file path from FilePath field
+		if v.FilePath == "" {
+			return "", fmt.Errorf("video item has no FilePath")
+		}
+		return v.FilePath, nil
+		
+	default:
+		return "", fmt.Errorf("item is not a video item")
+	}
 }
