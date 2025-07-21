@@ -1,0 +1,27 @@
+symmp_format_version: 0.1
+
+project:
+  name: "Simple Test Project"
+  output_dir: "./output"
+
+defaults:
+  voice:
+    character_name: "ずんだもん"
+    speed: 1.0
+    pitch: 0.0
+    volume: 1.0
+
+sequences:
+  - id: opening
+    scenes:
+      - id: title_scene
+        shots:
+          - image:
+              file_path: "./assets/title.png"
+              x: 160
+              y: 90
+              zoom: 1.0
+              length: 3.0
+          - voice:
+              line: "こんにちは、今日は動画編集について説明します"
+              length: auto

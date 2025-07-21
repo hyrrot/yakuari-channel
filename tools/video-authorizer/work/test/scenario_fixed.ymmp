@@ -1,0 +1,290 @@
+{
+  "FilePath": "D:\\hyrrot\\works\\yakuari-channel\\tools\\video-authorizer\\work\\template.ymmp",
+  "SelectedTimelineIndex": 0,
+  "Timelines": [
+    {
+      "ID": "38dc912b-8a28-42bf-b5ed-0d8735ad2d43",
+      "Name": "メイン",
+      "VideoInfo": {
+        "FPS": 60,
+        "Hz": 48000,
+        "Width": 1920,
+        "Height": 1080
+      },
+      "VerticalLine": {
+        "IsEnabled": false,
+        "StartFrame": 0,
+        "LineType": "BPM",
+        "Line": {
+          "$type": "YukkuriMovieMaker.Project.VerticalBPMLine, YukkuriMovieMaker.Plugin",
+          "BPM": 100
+        },
+        "Group": 4
+      },
+      "Items": [
+        {
+          "$type": "YukkuriMovieMaker.Project.Items.TachieItem, YukkuriMovieMaker",
+          "Frame": 0,
+          "Layer": 0,
+          "Length": 300,
+          "Remark": "ずんだもん立ち絵01",
+          "IsLocked": false,
+          "IsHidden": false,
+          "Group": 0,
+          "KeyFrames": {
+            "Frames": [],
+            "Count": 0
+          },
+          "CharacterName": "ずんだもん",
+          "TachieItemParameter": {
+            "$type": "YukkuriMovieMaker.Plugin.Tachie.Psd.PsdTachieItemParameter, YukkuriMovieMaker.Plugin.Tachie.Psd",
+            "EnableLayers": [
+              "n126",
+              "n119",
+              "n117",
+              "n114",
+              "n112",
+              "n107",
+              "n106",
+              "n105",
+              "n104",
+              "n94",
+              "n76",
+              "n75",
+              "n68",
+              "n58",
+              "n53",
+              "n52",
+              "n51",
+              "n42",
+              "n41",
+              "n32",
+              "n28",
+              "n27",
+              "n17",
+              "n16",
+              "n5",
+              "n0"
+            ],
+            "FilePath": "D:\\hyrrot\\works\\youtube\\zundamon\\ずんだもん立ち絵素材2.3\\ずんだもん立ち絵素材2.3.psd",
+            "IsHiddenWhenNoSpeech": false
+          },
+          "X": {
+            "Values": [
+              {
+                "Value": -601
+              }
+            ],
+            "Span": 0,
+            "AnimationType": "なし"
+          },
+          "Y": {
+            "Values": [
+              {
+                "Value": 50.800048828125
+              }
+            ],
+            "Span": 0,
+            "AnimationType": "なし"
+          },
+          "Zoom": {
+            "Values": [
+              {
+                "Value": 47.2
+              }
+            ],
+            "Span": 0,
+            "AnimationType": "なし"
+          }
+        },
+        {
+          "$type": "YukkuriMovieMaker.Project.Items.VoiceItem, YukkuriMovieMaker",
+          "Frame": 0,
+          "Layer": 0,
+          "Length": 120,
+          "Remark": "ずんだもんvoice 01",
+          "IsLocked": false,
+          "IsHidden": false,
+          "Group": 0,
+          "KeyFrames": {
+            "Frames": [],
+            "Count": 0
+          },
+          "CharacterName": "ずんだもん",
+          "Serif": "ずんだもんなのだ",
+          "Hatsuon": "コンニチワ'",
+          "VoiceLength": "00:00:00.9386666",
+          "X": {
+            "Values": [
+              {
+                "Value": 442.1
+              }
+            ],
+            "Span": 0,
+            "AnimationType": "なし"
+          },
+          "Y": {
+            "Values": [
+              {
+                "Value": 0
+              }
+            ],
+            "Span": 0,
+            "AnimationType": "なし"
+          },
+          "Font": "Rounded Mgen+ 2pp black",
+          "FontSize": {
+            "Values": [
+              {
+                "Value": 60
+              }
+            ],
+            "Span": 0,
+            "AnimationType": "なし"
+          },
+          "FontColor": "#FFFFFFFF",
+          "Style": "ShadowLight",
+          "StyleColor": "#FF33A65E"
+        },
+        {
+          "$type": "YukkuriMovieMaker.Project.Items.VideoItem, YukkuriMovieMaker",
+          "Frame": 300,
+          "Layer": 0,
+          "Length": 0,
+          "Remark": "ビデオ",
+          "IsLocked": false,
+          "IsHidden": false,
+          "Group": 0,
+          "KeyFrames": {
+            "Frames": [],
+            "Count": 0
+          },
+          "FilePath": "image.png",
+          "Volume": {
+            "Values": [
+              {
+                "Value": 50
+              }
+            ],
+            "Span": 0,
+            "AnimationType": "なし"
+          },
+          "PlaybackRate": 100,
+          "X": {
+            "Values": [
+              {
+                "Value": 0
+              }
+            ],
+            "Span": 0,
+            "AnimationType": "なし"
+          },
+          "Y": {
+            "Values": [
+              {
+                "Value": 0
+              }
+            ],
+            "Span": 0,
+            "AnimationType": "なし"
+          },
+          "Zoom": {
+            "Values": [
+              {
+                "Value": 100
+              }
+            ],
+            "Span": 0,
+            "AnimationType": "なし"
+          }
+        },
+        {
+          "$type": "YukkuriMovieMaker.Project.Items.VoiceItem, YukkuriMovieMaker",
+          "Frame": 300,
+          "Layer": 0,
+          "Length": 180,
+          "Remark": "ずんだもんvoice 01",
+          "IsLocked": false,
+          "IsHidden": false,
+          "Group": 0,
+          "KeyFrames": {
+            "Frames": [],
+            "Count": 0
+          },
+          "CharacterName": "ずんだもん",
+          "Serif": "今日はこの沼について語るよ",
+          "Hatsuon": "コンニチワ'",
+          "VoiceLength": "00:00:00.9386666",
+          "X": {
+            "Values": [
+              {
+                "Value": 442.1
+              }
+            ],
+            "Span": 0,
+            "AnimationType": "なし"
+          },
+          "Y": {
+            "Values": [
+              {
+                "Value": 0
+              }
+            ],
+            "Span": 0,
+            "AnimationType": "なし"
+          },
+          "Font": "Rounded Mgen+ 2pp black",
+          "FontSize": {
+            "Values": [
+              {
+                "Value": 60
+              }
+            ],
+            "Span": 0,
+            "AnimationType": "なし"
+          },
+          "FontColor": "#FFFFFFFF",
+          "Style": "ShadowLight",
+          "StyleColor": "#FF33A65E"
+        }
+      ],
+      "LayerSettings": {
+        "Items": [
+          {
+            "Layer": 0,
+            "Label": null,
+            "Color": "#00FFFFFF",
+            "IsHidden": false,
+            "Volume": 100
+          }
+        ]
+      },
+      "CurrentFrame": 0,
+      "Length": 480,
+      "MaxLayer": 0
+    }
+  ],
+  "Characters": [
+    {
+      "Name": "ずんだもん",
+      "GroupName": "VOICEVOX",
+      "Color": "#FF33A65E",
+      "Layer": 0,
+      "Voice": {
+        "API": "voicevox",
+        "Arg": "074fc39e-678b-4c13-8916-ffca8d505d1d:388f246b-8c41-4ac1-8e2d-5d79f3ff56d9"
+      }
+    },
+    {
+      "Name": "四国めたん",
+      "GroupName": "VOICEVOX",
+      "Color": "#FFDF4C94",
+      "Layer": 0,
+      "Voice": {
+        "API": "voicevox",
+        "Arg": "074fc39e-678b-4c13-8916-ffca8d505d1d:7ffcb7ce-00ec-4bdc-82cd-45a8889e43ff"
+      }
+    }
+  ],
+  "CollapsedGroups": []
+}

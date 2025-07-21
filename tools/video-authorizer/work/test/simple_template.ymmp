@@ -1,0 +1,86 @@
+{
+  "FilePath": "template.ymmp",
+  "SelectedTimelineIndex": 0,
+  "Timelines": [
+    {
+      "ID": "main_timeline",
+      "Name": "メインタイムライン",
+      "VideoInfo": {
+        "FPS": 60,
+        "Hz": 48000,
+        "Width": 1920,
+        "Height": 1080
+      },
+      "VerticalLine": {
+        "IsEnabled": false,
+        "StartFrame": 0,
+        "LineType": 0
+      },
+      "Items": [
+        {
+          "$type": "YukkuriMovieMaker.Project.VoiceItem",
+          "Remark": "ずんだもんvoice 01",
+          "Serif": "サンプルテキスト",
+          "CharacterName": "ずんだもん",
+          "Frame": 0,
+          "Length": 100,
+          "Layer": 0,
+          "IsLocked": false,
+          "Group": 0
+        },
+        {
+          "$type": "YukkuriMovieMaker.Project.TachieItem",
+          "Remark": "ずんだもん立ち絵01",
+          "CharacterName": "ずんだもん",
+          "Frame": 0,
+          "Length": 100,
+          "Layer": 1,
+          "IsLocked": false,
+          "Group": 0
+        },
+        {
+          "$type": "YukkuriMovieMaker.Project.VideoItem",
+          "Remark": "ビデオ",
+          "FilePath": "sample.mp4",
+          "Frame": 0,
+          "Length": 100,
+          "Layer": 2,
+          "IsLocked": false,
+          "Group": 0,
+          "PlaybackRate": 100,
+          "IsLooped": false
+        }
+      ],
+      "LayerSettings": {
+        "Items": [
+          {
+            "Layer": 0,
+            "Label": null,
+            "Color": "#00FFFFFF",
+            "IsHidden": false,
+            "Volume": 100.0
+          },
+          {
+            "Layer": 1,
+            "Label": null,
+            "Color": "#00FFFFFF",
+            "IsHidden": false,
+            "Volume": 100.0
+          },
+          {
+            "Layer": 2,
+            "Label": null,
+            "Color": "#00FFFFFF",
+            "IsHidden": false,
+            "Volume": 100.0
+          }
+        ]
+      },
+      "CurrentFrame": 0,
+      "Length": 1000,
+      "MaxLayer": 2
+    }
+  ],
+  "Characters": [],
+  "CollapsedGroups": []
+}

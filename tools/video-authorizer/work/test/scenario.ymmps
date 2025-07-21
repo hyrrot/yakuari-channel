@@ -1,0 +1,28 @@
+YMMPSVersion: "1" # 文字列. "1" 以外は拒否
+
+#- ymmpファイルのタイムラインの構造を Episode, Sequence, Scene, Shot, Item の単位で構造化して定義し、それらを適切に並べた上でymmpファイルに変換する。それぞれの単位は id 要素を持ち、他の要素から必要なときに参照することができる。
+#  Episode: ymmpファイルで扱われるプロジェクト全体。順序のある複数のSequenceを含み、それらが指定された順番に並べられる。
+#  Sequence: 順序のある複数の Scene を含み、それらが指定された順番に並べられる。
+#  Scene: 順序のある複数の Shot を含み、それらが指定された順番に並べられる。
+#  Shot: 順序のある複数のItemを含み、それらは同じ開始時刻を持つ（同時に開始される）。
+#  Item: ymmpのItemに対応。
+Sequences:
+- ID: sequence1
+  Scenes:
+  - ID: scene1
+    Shots:
+    - _Template: "ずんだもん立ち絵01" # ymmp の Item の Remarkがこれと同じ値であるものに対応
+      Length: "until:SEQUENCE_END"
+    - _Template: "ずんだもんvoice 01"
+      Serif: |
+        ずんだもんなのだ
+      Length: "_auto"
+  - ID: scene2
+    Shots:
+    - _Template: "映像"
+      FilePath: "image.png"
+      Length: until:SCENE_END
+    - _Template: "ずんだもんvoice 01"
+      Serif: |
+        今日はこの沼について語るよ
+      Length: "_auto"
