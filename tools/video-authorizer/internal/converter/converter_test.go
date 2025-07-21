@@ -130,6 +130,79 @@ func TestConverter_Convert(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "conversion with _auto:VOICEVOX length",
+			template: &models.YMMPProject{
+				FilePath:              "/template.ymmp",
+				SelectedTimelineIndex: 0,
+				Timelines: []models.Timeline{
+					{
+						ID:   "timeline-1",
+						Name: "メイン",
+						VideoInfo: models.VideoInfo{
+							FPS:    30,
+							Hz:     48000,
+							Width:  1920,
+							Height: 1080,
+						},
+						Items: []interface{}{
+							&models.VoiceItem{
+								BaseItem: models.BaseItem{
+									Frame:  0,
+									Layer:  1,
+									Length: 100,
+									Remark: "voice_test",
+								},
+								CharacterName: "ずんだもん",
+								Serif:         "テスト",
+							},
+						},
+					},
+				},
+			},
+			ymmps: &models.YMMPSDocument{
+				YMMPSVersion: "1",
+				Sequences: []models.Sequence{
+					{
+						ID: "seq1",
+						Scenes: []models.Scene{
+							{
+								ID: "scene1",
+								Shots: []models.Shot{
+									{
+										ID: "shot1",
+										Items: []models.ItemSpec{
+											{
+												Template: "voice_test",
+												Length:   "_auto:VOICEVOX",
+												Properties: map[string]interface{}{
+													"Serif": "こんにちは、ずんだもんなのだ。",
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			check: func(t *testing.T, result *models.YMMPProject) {
+				assert.Equal(t, 1, len(result.Timelines))
+				assert.Greater(t, len(result.Timelines[0].Items), 0)
+				
+				// Check that the voice item has a non-zero length
+				voiceItem, ok := result.Timelines[0].Items[0].(*models.VoiceItem)
+				require.True(t, ok, "First item should be a VoiceItem")
+				
+				// Length should be greater than 0 (either calculated from VOICEVOX or fallback)
+				assert.Greater(t, voiceItem.Length, 0, "Voice item length should be greater than 0")
+				
+				// Check that the serif was properly applied
+				assert.Equal(t, "こんにちは、ずんだもんなのだ。", voiceItem.Serif)
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {

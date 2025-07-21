@@ -1,6 +1,6 @@
 YMMPSVersion: "1" # 文字列. "1" 以外は拒否
 
-#- ymmpファイルのタイムラインの構造を Episode, Sequence, Scene, Shot, Item の単位で構造化して定義し、それらを適切に並べた上でymmpファイルに変換する。それぞれの単位は id 要素を持ち、他の要素から必要なときに参照することができる。
+#  ymmpファイルのタイムラインの構造を Episode, Sequence, Scene, Shot, Item の単位で構造化して定義し、それらを適切に並べた上でymmpファイルに変換する。それぞれの単位は id 要素を持ち、他の要素から必要なときに参照することができる。
 #  Episode: ymmpファイルで扱われるプロジェクト全体。順序のある複数のSequenceを含み、それらが指定された順番に並べられる。
 #  Sequence: 順序のある複数の Scene を含み、それらが指定された順番に並べられる。
 #  Scene: 順序のある複数の Shot を含み、それらが指定された順番に並べられる。
@@ -11,36 +11,35 @@ Sequences:
   Scenes:
   - ID: scene_op
     Shots:
-    - _Template: "bgm_op"
-      Length: "_until:SCENE_END"
-    - _Template: "voice_zunda"
-      Serif: |
-        この動画には、CAPCOMの
-        「逆転裁判」シリーズのネタバレが
-        多数含まれていますのだ。
-        まだプレイされていない方は、ご注意の上
-        ご視聴くださいなのだ。
-      Length: "_auto"
+    - Items:
+      - _Template: "bgm_op"
+        Length: "_until:SCENE_END"
+      - _Template: "voice_zunda"
+        Serif: |
+          この動画には、CAPCOMの
+          「逆転裁判」シリーズのネタバレが
+          多数含まれていますのだ。
+          まだプレイされていない方は、ご注意の上
+          ご視聴くださいなのだ。
+        Length: "_auto:VOICEVOX"
 - ID: seq_main
   Scenes:
 
   # BGM, 背景, 立ち絵
   - Shots:
-    - _Template: "bgm_op"
-      Length: "_until:SEQUENCE_END"
-    - _Template: "img_background"
-      Length: "_until:SEQUENCE_END"
-    - _Template: "tachie_zunda"
-      Length: "_until:SEQUENCE_END"
-    - _Template: "tachie_metan"
-      Length: "_until:SEQUENCE_END"
-
+    - Items:
+      - _Template: "bgm_op"
+        Length: "_until:SEQUENCE_END"
+      - _Template: "img_background"
+        Length: "_until:SEQUENCE_END"
+      - _Template: "tachie_zunda"
+        Length: "_until:SEQUENCE_END"
+      - _Template: "tachie_metan"
+        Length: "_until:SEQUENCE_END"
 
   - Shots:
-    - _Template: "voice_zunda"
-      Serif: |
-        こんにちは。ずんだもんなのだ。
-  - Shots:
-    - _Template: "voice_zunda"
-      Serif: |
-        こんにちは。ずんだもんなのだ。
+    - Items:
+      - _Template: "voice_zunda"
+        Length: "_auto:VOICEVOX"
+        Serif: |
+          こんにちは。ずんだもんなのだ。

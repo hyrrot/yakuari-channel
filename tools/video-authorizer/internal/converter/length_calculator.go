@@ -54,8 +54,8 @@ func (ctx *CompileContext) RegisterShotEnd(id string, endFrame int) {
 
 // LengthCalculator handles calculation of item lengths
 type LengthCalculator struct {
-	voicevoxClient *VoicevoxClient
-	ffprobeClient  *FFProbeClient
+	voicevoxClient VoicevoxClientInterface
+	ffprobeClient  FFProbeClientInterface
 }
 
 // NewLengthCalculator creates a new length calculator
@@ -63,6 +63,30 @@ func NewLengthCalculator() *LengthCalculator {
 	return &LengthCalculator{
 		voicevoxClient: NewVoicevoxClient(""),
 		ffprobeClient:  NewFFProbeClient(""),
+	}
+}
+
+// NewLengthCalculatorWithVoicevox creates a new length calculator with a custom VOICEVOX client
+func NewLengthCalculatorWithVoicevox(voicevoxClient VoicevoxClientInterface) *LengthCalculator {
+	return &LengthCalculator{
+		voicevoxClient: voicevoxClient,
+		ffprobeClient:  NewFFProbeClient(""),
+	}
+}
+
+// NewLengthCalculatorWithFFProbe creates a new length calculator with a custom FFProbe client
+func NewLengthCalculatorWithFFProbe(ffprobeClient FFProbeClientInterface) *LengthCalculator {
+	return &LengthCalculator{
+		voicevoxClient: NewVoicevoxClient(""),
+		ffprobeClient:  ffprobeClient,
+	}
+}
+
+// NewLengthCalculatorWithClients creates a new length calculator with custom VOICEVOX and FFProbe clients
+func NewLengthCalculatorWithClients(voicevoxClient VoicevoxClientInterface, ffprobeClient FFProbeClientInterface) *LengthCalculator {
+	return &LengthCalculator{
+		voicevoxClient: voicevoxClient,
+		ffprobeClient:  ffprobeClient,
 	}
 }
 
@@ -208,6 +232,27 @@ func NewAdvancedLengthCalculator() *AdvancedLengthCalculator {
 	}
 }
 
+// NewAdvancedLengthCalculatorWithVoicevox creates a new advanced length calculator with a custom VOICEVOX client
+func NewAdvancedLengthCalculatorWithVoicevox(voicevoxClient VoicevoxClientInterface) *AdvancedLengthCalculator {
+	return &AdvancedLengthCalculator{
+		basicCalculator: NewLengthCalculatorWithVoicevox(voicevoxClient),
+	}
+}
+
+// NewAdvancedLengthCalculatorWithFFProbe creates a new advanced length calculator with a custom FFProbe client
+func NewAdvancedLengthCalculatorWithFFProbe(ffprobeClient FFProbeClientInterface) *AdvancedLengthCalculator {
+	return &AdvancedLengthCalculator{
+		basicCalculator: NewLengthCalculatorWithFFProbe(ffprobeClient),
+	}
+}
+
+// NewAdvancedLengthCalculatorWithClients creates a new advanced length calculator with custom VOICEVOX and FFProbe clients
+func NewAdvancedLengthCalculatorWithClients(voicevoxClient VoicevoxClientInterface, ffprobeClient FFProbeClientInterface) *AdvancedLengthCalculator {
+	return &AdvancedLengthCalculator{
+		basicCalculator: NewLengthCalculatorWithClients(voicevoxClient, ffprobeClient),
+	}
+}
+
 // CalculateWithPrepass performs a two-pass calculation:
 // 1. First pass: Calculate all end frames for sequences, scenes, and shots
 // 2. Second pass: Calculate actual lengths with full context
@@ -233,6 +278,7 @@ func (alc *AdvancedLengthCalculator) CalculateWithPrepass(ymmps *models.YMMPSDoc
 func (alc *AdvancedLengthCalculator) calculateSequenceEndFrame(sequence models.Sequence, startFrame int, ctx *CompileContext) (int, error) {
 	currentFrame := startFrame
 	
+	// Scenes are executed sequentially
 	for _, scene := range sequence.Scenes {
 		sceneEndFrame, err := alc.calculateSceneEndFrame(scene, currentFrame, ctx)
 		if err != nil {
@@ -276,9 +322,30 @@ func (alc *AdvancedLengthCalculator) calculateShotEndFrame(shot models.Shot, sta
 				maxEndFrame = endFrame
 			}
 		} else {
-			// For non-numeric lengths, assume a default length for pre-pass
-			// This will be refined in the actual implementation
-			defaultLength := 100 // frames
+			// For non-numeric lengths, use smarter defaults based on length type
+			parsed, parseErr := models.ParseLength(item.Length)
+			var defaultLength int
+			
+			if parseErr == nil {
+				switch parsed.Type {
+				case models.LengthTypeUntilIDEnd:
+					// For _until: types, don't assume a default length in prepass
+					// These will be resolved in the second pass
+					continue
+				case models.LengthTypeAutoVoice:
+					// Voice items typically 3-10 seconds, assume 5 seconds at 30 FPS
+					defaultLength = 150
+				case models.LengthTypeAutoVideo:
+					// Video items vary widely, use moderate default
+					defaultLength = 300
+				default:
+					defaultLength = 100
+				}
+			} else {
+				// Unknown format, use conservative default
+				defaultLength = 100
+			}
+			
 			endFrame := startFrame + defaultLength
 			if endFrame > maxEndFrame {
 				maxEndFrame = endFrame
@@ -296,27 +363,43 @@ func (lc *LengthCalculator) calculateAutoVoiceLength(ctx *CompileContext) (int, 
 
 // calculateAutoVoiceLengthForItem calculates voice length for a specific voice item
 func (lc *LengthCalculator) calculateAutoVoiceLengthForItem(item interface{}) (int, error) {
-	// Check if VOICEVOX is available
-	if !lc.voicevoxClient.IsAvailable() {
-		return 0, fmt.Errorf("VOICEVOX API is not available at %s", lc.voicevoxClient.baseURL)
-	}
-
-	// Extract text and speaker from voice item
+	// Extract text and speaker from voice item first
 	text, speaker, err := lc.extractVoiceItemData(item)
 	if err != nil {
 		return 0, fmt.Errorf("failed to extract voice data: %w", err)
 	}
 
-	// Get duration from VOICEVOX
-	duration, err := lc.voicevoxClient.GetAudioDuration(text, speaker)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get audio duration from VOICEVOX: %w", err)
+	// Try VOICEVOX if available
+	if lc.voicevoxClient.IsAvailableWithLogging(true) {
+		duration, err := lc.voicevoxClient.GetAudioDuration(text, speaker)
+		if err == nil {
+			// Convert to frames (assuming 30 FPS)
+			frames := ConvertDurationToFrames(duration, 30.0)
+			return frames, nil
+		}
+		// Log the VOICEVOX error but continue with fallback
+		fmt.Printf("VOICEVOX calculation failed: %v, using fallback estimation\n", err)
 	}
 
-	// Convert to frames (assuming 30 FPS)
-	frames := ConvertDurationToFrames(duration, 30.0)
+	// Fallback: estimate length based on text length
+	// Typical speech rate: ~5-6 characters per second in Japanese
+	// Use 5 chars/sec = 150 frames (5 seconds at 30 FPS) for default estimation
+	textLength := len([]rune(text)) // Count Unicode characters properly
+	if textLength == 0 {
+		return 150, nil // Default 5 seconds if no text
+	}
 	
-	return frames, nil
+	// Estimate: 5 characters per second = 150 frames per 5 characters
+	estimatedSeconds := float64(textLength) / 5.0
+	if estimatedSeconds < 1.0 {
+		estimatedSeconds = 1.0 // Minimum 1 second
+	}
+	if estimatedSeconds > 30.0 {
+		estimatedSeconds = 30.0 // Maximum 30 seconds
+	}
+	
+	estimatedFrames := int(estimatedSeconds * 30.0) // 30 FPS
+	return estimatedFrames, nil
 }
 
 // calculateAutoVideoLength calculates video length using ffprobe (fallback method)

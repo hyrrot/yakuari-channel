@@ -6,7 +6,9 @@
       "Bash(rm:*)",
       "Bash(go build:*)",
       "Bash(./ymmps-authorizer:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(../../../tools/video-authorizer/ymmps-authorizer.exe:*)"
     ],
     "deny": []
   }

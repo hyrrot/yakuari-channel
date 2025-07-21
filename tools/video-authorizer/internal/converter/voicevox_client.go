@@ -138,11 +138,33 @@ func (vc *VoicevoxClient) calculateDurationFromQuery(query *AudioQueryResponse) 
 
 // IsAvailable checks if VOICEVOX API is available
 func (vc *VoicevoxClient) IsAvailable() bool {
-	resp, err := vc.httpClient.Get(fmt.Sprintf("%s/version", vc.baseURL))
+	return vc.IsAvailableWithLogging(false)
+}
+
+// IsAvailableWithLogging checks if VOICEVOX API is available with optional detailed logging
+func (vc *VoicevoxClient) IsAvailableWithLogging(verbose bool) bool {
+	url := fmt.Sprintf("%s/version", vc.baseURL)
+	
+	if verbose {
+		fmt.Printf("[VOICEVOX] Checking availability at: %s\n", url)
+	}
+	
+	resp, err := vc.httpClient.Get(url)
 	if err != nil {
+		if verbose {
+			fmt.Printf("[VOICEVOX] Connection error: %v\n", err)
+		}
 		return false
 	}
 	defer resp.Body.Close()
+	
+	if verbose {
+		fmt.Printf("[VOICEVOX] HTTP Status: %d\n", resp.StatusCode)
+		if resp.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(resp.Body)
+			fmt.Printf("[VOICEVOX] Response body: %s\n", string(body))
+		}
+	}
 	
 	return resp.StatusCode == http.StatusOK
 }

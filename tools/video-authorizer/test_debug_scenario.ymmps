@@ -1,0 +1,25 @@
+YMMPSVersion: "1"
+Sequences:
+- ID: intro_seq
+  Scenes:
+  - Shots:
+    - Items:
+      - _Template: "bgm_op"
+        Length: "_until:SEQUENCE_END"
+      - _Template: "voice_zunda"
+        Length: "150"
+        Serif: "イントロ"
+- ID: main_seq
+  Scenes:
+  - Shots:
+    - Items:
+      - _Template: "bgm_op"
+        Length: "_until:SEQUENCE_END"
+      - _Template: "voice_zunda"
+        Length: "200"
+        Serif: "メイン1"
+  - Shots:
+    - Items:
+      - _Template: "voice_zunda"
+        Length: "100"
+        Serif: "メイン2"

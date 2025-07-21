@@ -199,8 +199,11 @@ Sequences:
 			templateData: `{
 				"$type": "YukkuriMovieMaker.Project.YmmProject, YukkuriMovieMaker",
 				"FilePath": "template.ymmp",
-				"Timeline": {
-					"VideoInfo": {"FPS": 30},
+				"SelectedTimelineIndex": 0,
+				"Timelines": [{
+					"ID": "timeline-1",
+					"Name": "メイン",
+					"VideoInfo": {"FPS": 30, "Hz": 48000, "Width": 1920, "Height": 1080},
 					"Items": [
 						{
 							"$type": "YukkuriMovieMaker.Project.Items.VoiceItem, YukkuriMovieMaker",
@@ -208,7 +211,7 @@ Sequences:
 							"Frame": 0,
 							"Length": 120,
 							"Remark": "auto_voice",
-							"VoiceParameters": {"CharacterName": "ずんだもん"}
+							"CharacterName": "ずんだもん"
 						},
 						{
 							"$type": "YukkuriMovieMaker.Project.Items.VideoItem, YukkuriMovieMaker",
@@ -219,7 +222,7 @@ Sequences:
 							"FilePath": "dummy.mp4"
 						}
 					]
-				}
+				}]
 			}`,
 			scenarioData: `YMMPSVersion: "1"
 Sequences:
@@ -237,12 +240,12 @@ Sequences:
 				require.Len(t, project.Timelines, 1)
 				require.Len(t, project.Timelines[0].Items, 2)
 
-				// Auto calculations should fall back to template defaults when services unavailable
+				// Mock calculations should provide predictable results
 				voiceItem := project.Timelines[0].Items[0].(*models.VoiceItem)
-				assert.Equal(t, 120, voiceItem.Length) // Template default
+				assert.Equal(t, 90, voiceItem.Length) // Mock設定値 3.0秒 * 30fps = 90 frames
 
 				videoItem := project.Timelines[0].Items[1].(*models.VideoItem)
-				assert.Equal(t, 300, videoItem.Length) // Template default
+				assert.Equal(t, 450, videoItem.Length) // Mock設定値 15.0秒 * 30fps = 450 frames
 			},
 			shouldSucceed: true,
 		},
@@ -463,8 +466,20 @@ Sequences:
 			}
 			require.NoError(t, err)
 
-			// Convert scenario to project
-			conv := converter.NewConverter()
+			// Convert scenario to project with mocks for auto calculation tests
+			var conv *converter.Converter
+			if tt.name == "auto_length_calculation_scenario" {
+				// Create mock clients for predictable test results
+				mockVoicevox := converter.NewMockVoicevoxClient(true)
+				mockVoicevox.SetDuration("自動計算される音声です", 3.0) // 90 frames at 30 FPS
+				
+				mockFFProbe := converter.NewMockFFProbeClient(true)
+				mockFFProbe.SetDuration("test_video.mp4", 15.0) // 450 frames at 30 FPS
+				
+				conv = converter.NewConverterWithClients(mockVoicevox, mockFFProbe)
+			} else {
+				conv = converter.NewConverter()
+			}
 			project, err := conv.Convert(scenario, template)
 
 			if tt.shouldSucceed {
@@ -744,8 +759,14 @@ func runConversion(t *testing.T, templateData, scenarioData string) *models.YMMP
 	scenario, err := ymmpsParser.ParseFile(scenarioPath)
 	require.NoError(t, err)
 
-	// Convert
-	conv := converter.NewConverter()
+	// Convert with mocks for auto functionality
+	mockVoicevox := converter.NewMockVoicevoxClient(true)
+	mockFFProbe := converter.NewMockFFProbeClient(true)
+	// Set up default mock values
+	mockVoicevox.SetDuration("自動計算される音声です", 3.0) // 90 frames at 30 FPS
+	mockFFProbe.SetDuration("test_video.mp4", 15.0) // 450 frames at 30 FPS
+	
+	conv := converter.NewConverterWithClients(mockVoicevox, mockFFProbe)
 	project, err := conv.Convert(scenario, template)
 	require.NoError(t, err)
 

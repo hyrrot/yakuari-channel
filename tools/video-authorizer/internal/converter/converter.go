@@ -36,6 +36,36 @@ func NewConverterWithBasePath(basePath string) *Converter {
 	}
 }
 
+// NewConverterWithVoicevox creates a new converter with a custom VOICEVOX client
+func NewConverterWithVoicevox(voicevoxClient VoicevoxClientInterface) *Converter {
+	return &Converter{
+		lengthCalculator:  NewAdvancedLengthCalculatorWithVoicevox(voicevoxClient),
+		pathResolver:      NewPathResolver(""),
+		templateValidator: NewTemplateValidator(),
+		filePathUpdater:   NewFilePathUpdater(),
+	}
+}
+
+// NewConverterWithFFProbe creates a new converter with a custom FFProbe client
+func NewConverterWithFFProbe(ffprobeClient FFProbeClientInterface) *Converter {
+	return &Converter{
+		lengthCalculator:  NewAdvancedLengthCalculatorWithFFProbe(ffprobeClient),
+		pathResolver:      NewPathResolver(""),
+		templateValidator: NewTemplateValidator(),
+		filePathUpdater:   NewFilePathUpdater(),
+	}
+}
+
+// NewConverterWithClients creates a new converter with custom VOICEVOX and FFProbe clients
+func NewConverterWithClients(voicevoxClient VoicevoxClientInterface, ffprobeClient FFProbeClientInterface) *Converter {
+	return &Converter{
+		lengthCalculator:  NewAdvancedLengthCalculatorWithClients(voicevoxClient, ffprobeClient),
+		pathResolver:      NewPathResolver(""),
+		templateValidator: NewTemplateValidator(),
+		filePathUpdater:   NewFilePathUpdater(),
+	}
+}
+
 // Convert converts YMMPS document to YMMP project using the template
 func (c *Converter) Convert(ymmps *models.YMMPSDocument, template *models.YMMPProject) (*models.YMMPProject, error) {
 	// Ensure all elements have IDs for relative length calculations
@@ -192,6 +222,11 @@ func (c *Converter) getItemRemark(item interface{}) string {
 		return v.Remark
 	case *models.TachieItem:
 		return v.Remark
+	case map[string]interface{}:
+		if remark, ok := v["Remark"].(string); ok {
+			return remark
+		}
+		return ""
 	default:
 		return ""
 	}
@@ -206,6 +241,8 @@ func (c *Converter) setItemFrame(item interface{}, frame int) {
 		v.Frame = frame
 	case *models.TachieItem:
 		v.Frame = frame
+	case map[string]interface{}:
+		v["Frame"] = frame
 	}
 }
 
@@ -218,6 +255,8 @@ func (c *Converter) setItemLength(item interface{}, length int) {
 		v.Length = length
 	case *models.TachieItem:
 		v.Length = length
+	case map[string]interface{}:
+		v["Length"] = length
 	}
 }
 
@@ -313,6 +352,12 @@ func (c *Converter) deepCopyItem(item interface{}) (interface{}, error) {
 			return nil, err
 		}
 		return &copy, nil
+	case map[string]interface{}:
+		var copy map[string]interface{}
+		if err := json.Unmarshal(data, &copy); err != nil {
+			return nil, err
+		}
+		return copy, nil
 	default:
 		return nil, fmt.Errorf("unsupported item type")
 	}

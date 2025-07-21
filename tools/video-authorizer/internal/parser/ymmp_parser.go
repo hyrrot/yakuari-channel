@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -19,8 +20,17 @@ func NewYMMPParser() *YMMPParser {
 
 // Parse parses YMMP content from a reader
 func (p *YMMPParser) Parse(reader io.Reader) (*models.YMMPProject, error) {
+	// Read all content to handle BOM
+	content, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read content: %w", err)
+	}
+
+	// Remove BOM if present
+	content = removeBOM(content)
+
 	var project models.YMMPProject
-	decoder := json.NewDecoder(reader)
+	decoder := json.NewDecoder(bytes.NewReader(content))
 	
 	if err := decoder.Decode(&project); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON: %w", err)
@@ -43,4 +53,13 @@ func (p *YMMPParser) ParseFile(filename string) (*models.YMMPProject, error) {
 	defer file.Close()
 
 	return p.Parse(file)
+}
+
+// removeBOM removes the UTF-8 BOM (Byte Order Mark) if present
+func removeBOM(content []byte) []byte {
+	// UTF-8 BOM is 0xEF, 0xBB, 0xBF
+	if len(content) >= 3 && content[0] == 0xEF && content[1] == 0xBB && content[2] == 0xBF {
+		return content[3:]
+	}
+	return content
 }
